@@ -1,8 +1,13 @@
 import os
+import sys
 from time import time
 import requests
 from multiprocessing import Pool
 import pyarrow.parquet as pq
+
+# Add parent directory to path so gpt module can be imported
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from gpt.common import get_base_dir
 import argparse
 
@@ -136,4 +141,3 @@ if __name__ == "__main__":
     # Report results
     successful = sum(1 for success in results if success)
     print(f"Done! Downloaded: {successful}/{len(ids_to_download)} shards to {DATA_DIR}")
-

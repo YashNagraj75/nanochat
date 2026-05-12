@@ -1,7 +1,7 @@
 import os
 import sys
 import argparse
-from time import time
+import time
 import torch
 
 # Add parent directory to path so gpt module can be imported
