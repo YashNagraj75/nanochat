@@ -2,12 +2,13 @@ import os
 import sys
 import argparse
 from time import time
+import torch
 
 # Add parent directory to path so gpt module can be imported
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from gpt.dataset import parquet_iter_batched
-from gpt.common import get_base_dir
+from gpt.common import get_base_dir, save_training_metadata
 from gpt.tokenizer import RustBPE_Tokenizer
 
 
@@ -67,4 +68,49 @@ encoded = tokenizer.encode(text)
 decoded = tokenizer.decode(text)
 assert decoded == text
 
-# I want to
+# I want to calculated bits per byte for thr vocab as it will allow us to measure the loss
+# invariant of the tokenizer acrhitecture and vocab size. Then we calculate the bits per byte
+# for the validation set which I care about
+
+vocab_size = len(tokenizer.get_vocab())
+special_set = set(tokenizer.get_special_tokens())
+token_strings = [
+    tokenizer.decode(token_id)
+    for token_id in range(vocab_size)
+    if token_id not in special_set
+]
+
+token_bytes = []
+for token_id in range(vocab_size):
+    token_string = token_strings[token_id]
+    ids = len(token_string.encode("utf-8"))
+    token_bytes.append(ids)
+
+token_bytes = torch.tensor(token_bytes, dtype=torch.float32, device="cpu")
+
+# Prepare metadata dictionary
+metadata = {
+    "train_time_seconds": t1 - t0,
+    "vocab_size": vocab_size,
+    "num_special_tokens": len(special_set),
+    "args": vars(args),
+}
+
+# Save token_bytes tensor with metadata
+token_bytes_data = {
+    "tensor": token_bytes,
+    "metadata": metadata,
+}
+torch.save(token_bytes_data, os.path.join(tokenizer_dir, "token_bytes.pt"))
+print(
+    f"Saved token byte counts with metadata to {os.path.join(tokenizer_dir, 'token_bytes.pt')}"
+)
+
+# Save metadata separately using the utility function
+
+# Save training metadata
+save_training_metadata(
+    output_dir=tokenizer_dir,
+    metadata=metadata,
+    markdown_filename="tokenizer.md",
+)
