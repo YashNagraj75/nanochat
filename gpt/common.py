@@ -3,6 +3,12 @@ import json
 import torch
 from datetime import datetime
 
+_DTYPE_MAP = {
+    "bfloat16": torch.bfloat16,
+    "float16": torch.float16,
+    "float32": torch.float32,
+}
+
 
 def get_base_dir():
     home_dir = os.path.expanduser("~")
