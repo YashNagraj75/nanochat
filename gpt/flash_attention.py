@@ -101,3 +101,28 @@ def _sdpa_attention_cal(q, k, v, window_size, enable_gqa):
     return F.scaled_dot_product_attention(
         q, k, v, attn_mask=~mask, enable_gqa=enable_gqa
     )
+
+
+def flash_attn_func(q, k, v, causal=False, window_size=(-1, -1)):
+    """
+    Flash attention function without KV cache (for pretraining)
+
+    Args:
+        q, k, v: Tensors of shape (B, T, H, D)
+        causal: Whether to use causal masking
+        window_size: (left, right) sliding window. -1 means unlimited.
+
+    Returns:
+        Output tensor of shape (B, T, H, D)
+    """
+    if USE_FA3:
+        return _fa3.flash_attn_func(q, k, v, causal=causal, window_size=window_size)
+
+    # SDPA fallback for non-Hopper GPU's
+    q = q.transpose(1, 2)  # (B, H, T, D)
+    k = k.transpose(1, 2)  # (B, H, T, D)
+    v = v.transpose(1, 2)  # (B, H, T, D)
+    enable_gqa = q.size(1) != k.size(1)  # GQA if num_heads in q and k are different
+    return _sdpa_attention_cal(q, k, v, window_size, enable_gqa=enable_gqa).transpose(
+        1, 2
+    )  # (B, T, H, D)
