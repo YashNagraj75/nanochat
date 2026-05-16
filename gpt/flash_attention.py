@@ -126,3 +126,63 @@ def flash_attn_func(q, k, v, causal=False, window_size=(-1, -1)):
     return _sdpa_attention_cal(q, k, v, window_size, enable_gqa=enable_gqa).transpose(
         1, 2
     )  # (B, T, H, D)
+
+
+def flash_attn_kv_func(
+    q, k_cache, v_cache, k, v, causal=False, window_size=(-1, -1), cache_seqlens=None
+):
+    """
+    Flash attention function with KV cache for inference
+
+    Args:
+        q: Query tensor of shape (B, T_new, H, D)
+        k_cache, v_cache: Cached key and value tensors of shape (B, T_max, H_kv, D)
+        k, v: Current key and value tensors of shape (B, 1, H, D)
+        cache_seqlens: Current position in the cache (B,)
+        causal: Whether to use causal masking
+        window_size: (left, right) sliding window. -1 means unlimited.
+
+    Returns:
+        Output tensor of shape (B, T_new, H, D)
+    """
+    if USE_FA3:
+        return _fa3.flash_attn_with_kvcache(
+            q,
+            k_cache,
+            v_cache,
+            k=k,
+            v=v,
+            cache_seqlens=cache_seqlens,
+            causal=causal,
+            window_size=window_size,
+        )
+
+    # SDPA fallback : manually manage the KV cache
+    B, T_new, H, D = q.shape
+    pos = cache_seqlens[0].item()
+    if k is not None and v is not None:
+        k_cache[:, pos : pos + T_new, :, :] = k
+        v_cache[:, pos : pos + T_new, :, :] = v
+
+    # Now retreive k and v from the current_pos + new tokens
+    end_pos = pos + T_new
+    k_full = k_cache[:, :end_pos, :, :]
+    v_full = v_cache[:, :end_pos, :, :]
+
+    # Now tranpose to SDPA layout (B,T,H,D) -> (B,H,T,D)
+    q_sdpa = q.tranpose(1, 2)
+    k_sdpa = k_full.tranpose(1, 2)
+    v_sdpa = v_full.tranpose(1, 2)
+
+    enable_gqa = q_sdpa.size(1) != k_sdpa.size(1)
+    y_sdpa = _sdpa_attention_cal(
+        q_sdpa, k_sdpa, v_sdpa, window_size=window_size, enable_gqa=enable_gqa
+    )
+    return y_sdpa.transpose(1, 2)
+
+
+from types import SimpleNamespace
+
+flash_attn = SimpleNamespace(
+    flash_attn_func=flash_attn_func, flash_attn_kv_func=flash_attn_kv_func
+)
