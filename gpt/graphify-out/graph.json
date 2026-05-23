@@ -1,0 +1,1710 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "tokenizer.py",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L1",
+      "id": "tokenizer_py",
+      "community": 6,
+      "norm_label": "tokenizer.py"
+    },
+    {
+      "label": "RustBPE_Tokenizer",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L28",
+      "id": "gpt_tokenizer_rustbpe_tokenizer",
+      "community": 0,
+      "norm_label": "rustbpe_tokenizer"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L29",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_init",
+      "community": 0,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": "train_from_iterator()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L34",
+      "id": "gpt_tokenizer_train_from_iterator",
+      "community": 6,
+      "norm_label": "train_from_iterator()"
+    },
+    {
+      "label": "load_from_file()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L65",
+      "id": "gpt_tokenizer_load_from_file",
+      "community": 6,
+      "norm_label": "load_from_file()"
+    },
+    {
+      "label": "from_pretrained()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L74",
+      "id": "gpt_tokenizer_from_pretrained",
+      "community": 6,
+      "norm_label": "from_pretrained()"
+    },
+    {
+      "label": ".get_vocab_size()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L80",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_get_vocab_size",
+      "community": 0,
+      "norm_label": ".get_vocab_size()"
+    },
+    {
+      "label": ".get_special_tokens()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L83",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_get_special_tokens",
+      "community": 0,
+      "norm_label": ".get_special_tokens()"
+    },
+    {
+      "label": "encode_special()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L87",
+      "id": "gpt_tokenizer_encode_special",
+      "community": 0,
+      "norm_label": "encode_special()"
+    },
+    {
+      "label": ".get_bos_token_id()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L90",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_get_bos_token_id",
+      "community": 0,
+      "norm_label": ".get_bos_token_id()"
+    },
+    {
+      "label": ".encode()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L94",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_encode",
+      "community": 0,
+      "norm_label": ".encode()"
+    },
+    {
+      "label": ".__call__()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L120",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_call",
+      "community": 0,
+      "norm_label": ".__call__()"
+    },
+    {
+      "label": ".decode()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L123",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_decode",
+      "community": 0,
+      "norm_label": ".decode()"
+    },
+    {
+      "label": ".save()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L126",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_save",
+      "community": 0,
+      "norm_label": ".save()"
+    },
+    {
+      "label": ".render_conversation()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L133",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "community": 0,
+      "norm_label": ".render_conversation()"
+    },
+    {
+      "label": ".visualize_tokenization()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L227",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_visualize_tokenization",
+      "community": 0,
+      "norm_label": ".visualize_tokenization()"
+    },
+    {
+      "label": ".render_for_completion()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L242",
+      "id": "gpt_tokenizer_rustbpe_tokenizer_render_for_completion",
+      "community": 0,
+      "norm_label": ".render_for_completion()"
+    },
+    {
+      "label": "get_tokenizer()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L265",
+      "id": "gpt_tokenizer_get_tokenizer",
+      "community": 6,
+      "norm_label": "get_tokenizer()"
+    },
+    {
+      "label": "get_tokenizer_bytes()",
+      "file_type": "code",
+      "source_file": "tokenizer.py",
+      "source_location": "L270",
+      "id": "gpt_tokenizer_get_tokenizer_bytes",
+      "community": 6,
+      "norm_label": "get_tokenizer_bytes()"
+    },
+    {
+      "label": "Tokenize the converstion which is called as doc or document.         Returns ids",
+      "file_type": "rationale",
+      "source_file": "tokenizer.py",
+      "source_location": "L134",
+      "id": "gpt_tokenizer_rationale_134",
+      "community": 0,
+      "norm_label": "tokenize the converstion which is called as doc or document.         returns ids"
+    },
+    {
+      "label": "Small helper function useful in debugging: visualize the tokenization of render_",
+      "file_type": "rationale",
+      "source_file": "tokenizer.py",
+      "source_location": "L228",
+      "id": "gpt_tokenizer_rationale_228",
+      "community": 0,
+      "norm_label": "small helper function useful in debugging: visualize the tokenization of render_"
+    },
+    {
+      "label": "Used during Reinforcement Learning. In that setting, we want to         render t",
+      "file_type": "rationale",
+      "source_file": "tokenizer.py",
+      "source_location": "L243",
+      "id": "gpt_tokenizer_rationale_243",
+      "community": 0,
+      "norm_label": "used during reinforcement learning. in that setting, we want to         render t"
+    },
+    {
+      "label": "common.py",
+      "file_type": "code",
+      "source_file": "common.py",
+      "source_location": "L1",
+      "id": "common_py",
+      "community": 7,
+      "norm_label": "common.py"
+    },
+    {
+      "label": "get_base_dir()",
+      "file_type": "code",
+      "source_file": "common.py",
+      "source_location": "L13",
+      "id": "gpt_common_get_base_dir",
+      "community": 7,
+      "norm_label": "get_base_dir()"
+    },
+    {
+      "label": "save_training_metadata()",
+      "file_type": "code",
+      "source_file": "common.py",
+      "source_location": "L21",
+      "id": "gpt_common_save_training_metadata",
+      "community": 7,
+      "norm_label": "save_training_metadata()"
+    },
+    {
+      "label": "_detect_compute_dtype()",
+      "file_type": "code",
+      "source_file": "common.py",
+      "source_location": "L146",
+      "id": "gpt_common_detect_compute_dtype",
+      "community": 7,
+      "norm_label": "_detect_compute_dtype()"
+    },
+    {
+      "label": "Save training metadata to JSON, tensor, and markdown formats.      Args:",
+      "file_type": "rationale",
+      "source_file": "common.py",
+      "source_location": "L26",
+      "id": "gpt_common_rationale_26",
+      "community": 7,
+      "norm_label": "save training metadata to json, tensor, and markdown formats.      args:"
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "__init__.py",
+      "source_location": "L1",
+      "id": "init_py",
+      "community": 10,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "dataset.py",
+      "file_type": "code",
+      "source_file": "dataset.py",
+      "source_location": "L1",
+      "id": "dataset_py",
+      "community": 9,
+      "norm_label": "dataset.py"
+    },
+    {
+      "label": "list_parquet_files()",
+      "file_type": "code",
+      "source_file": "dataset.py",
+      "source_location": "L23",
+      "id": "gpt_dataset_list_parquet_files",
+      "community": 9,
+      "norm_label": "list_parquet_files()"
+    },
+    {
+      "label": "parquet_iter_batched()",
+      "file_type": "code",
+      "source_file": "dataset.py",
+      "source_location": "L36",
+      "id": "gpt_dataset_parquet_iter_batched",
+      "community": 9,
+      "norm_label": "parquet_iter_batched()"
+    },
+    {
+      "label": "download_single_file()",
+      "file_type": "code",
+      "source_file": "dataset.py",
+      "source_location": "L51",
+      "id": "gpt_dataset_download_single_file",
+      "community": 9,
+      "norm_label": "download_single_file()"
+    },
+    {
+      "label": "flash_attention.py",
+      "file_type": "code",
+      "source_file": "flash_attention.py",
+      "source_location": "L1",
+      "id": "flash_attention_py",
+      "community": 2,
+      "norm_label": "flash_attention.py"
+    },
+    {
+      "label": "_load_flash_attention()",
+      "file_type": "code",
+      "source_file": "flash_attention.py",
+      "source_location": "L11",
+      "id": "gpt_flash_attention_load_flash_attention",
+      "community": 2,
+      "norm_label": "_load_flash_attention()"
+    },
+    {
+      "label": "_use_fa3()",
+      "file_type": "code",
+      "source_file": "flash_attention.py",
+      "source_location": "L34",
+      "id": "gpt_flash_attention_use_fa3",
+      "community": 2,
+      "norm_label": "_use_fa3()"
+    },
+    {
+      "label": "_sdpa_attention_cal()",
+      "file_type": "code",
+      "source_file": "flash_attention.py",
+      "source_location": "L49",
+      "id": "gpt_flash_attention_sdpa_attention_cal",
+      "community": 2,
+      "norm_label": "_sdpa_attention_cal()"
+    },
+    {
+      "label": "flash_attn_func()",
+      "file_type": "code",
+      "source_file": "flash_attention.py",
+      "source_location": "L106",
+      "id": "gpt_flash_attention_flash_attn_func",
+      "community": 2,
+      "norm_label": "flash_attn_func()"
+    },
+    {
+      "label": "flash_attn_kv_func()",
+      "file_type": "code",
+      "source_file": "flash_attention.py",
+      "source_location": "L131",
+      "id": "gpt_flash_attention_flash_attn_kv_func",
+      "community": 2,
+      "norm_label": "flash_attn_kv_func()"
+    },
+    {
+      "label": "Helper function to load FS3, will have another to fallback to SDPA     on non-Ho",
+      "file_type": "rationale",
+      "source_file": "flash_attention.py",
+      "source_location": "L12",
+      "id": "gpt_flash_attention_rationale_12",
+      "community": 2,
+      "norm_label": "helper function to load fs3, will have another to fallback to sdpa     on non-ho"
+    },
+    {
+      "label": "SDPA attention with sliding window support.     q,k,v are (B,H, T,D)",
+      "file_type": "rationale",
+      "source_file": "flash_attention.py",
+      "source_location": "L50",
+      "id": "gpt_flash_attention_rationale_50",
+      "community": 2,
+      "norm_label": "sdpa attention with sliding window support.     q,k,v are (b,h, t,d)"
+    },
+    {
+      "label": "Flash attention function without KV cache (for pretraining)      Args:         q",
+      "file_type": "rationale",
+      "source_file": "flash_attention.py",
+      "source_location": "L107",
+      "id": "gpt_flash_attention_rationale_107",
+      "community": 2,
+      "norm_label": "flash attention function without kv cache (for pretraining)      args:         q"
+    },
+    {
+      "label": "Flash attention function with KV cache for inference      Args:         q: Query",
+      "file_type": "rationale",
+      "source_file": "flash_attention.py",
+      "source_location": "L134",
+      "id": "gpt_flash_attention_rationale_134",
+      "community": 2,
+      "norm_label": "flash attention function with kv cache for inference      args:         q: query"
+    },
+    {
+      "label": "optim.py",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L1",
+      "id": "optim_py",
+      "community": 4,
+      "norm_label": "optim.py"
+    },
+    {
+      "label": "adamw_step_fused()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L23",
+      "id": "gpt_optim_adamw_step_fused",
+      "community": 4,
+      "norm_label": "adamw_step_fused()"
+    },
+    {
+      "label": "muon_step_fused()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L95",
+      "id": "gpt_optim_muon_step_fused",
+      "community": 5,
+      "norm_label": "muon_step_fused()"
+    },
+    {
+      "label": "MuonAdamW",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L161",
+      "id": "gpt_optim_muonadamw",
+      "community": 1,
+      "norm_label": "muonadamw"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L188",
+      "id": "gpt_optim_muonadamw_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": "._step_adamw()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L204",
+      "id": "gpt_optim_muonadamw_step_adamw",
+      "community": 4,
+      "norm_label": "._step_adamw()"
+    },
+    {
+      "label": "._step_muon()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L246",
+      "id": "gpt_optim_muonadamw_step_muon",
+      "community": 5,
+      "norm_label": "._step_muon()"
+    },
+    {
+      "label": "step()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L309",
+      "id": "gpt_optim_step",
+      "community": 8,
+      "norm_label": "step()"
+    },
+    {
+      "label": "DistMuonAdamW",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L324",
+      "id": "gpt_optim_distmuonadamw",
+      "community": 3,
+      "norm_label": "distmuonadamw"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L383",
+      "id": "gpt_optim_distmuonadamw_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": "._reduce_adamw()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L397",
+      "id": "gpt_optim_distmuonadamw_reduce_adamw",
+      "community": 3,
+      "norm_label": "._reduce_adamw()"
+    },
+    {
+      "label": "._reduce_muon()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L423",
+      "id": "gpt_optim_distmuonadamw_reduce_muon",
+      "community": 3,
+      "norm_label": "._reduce_muon()"
+    },
+    {
+      "label": "._compute_adamw()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L453",
+      "id": "gpt_optim_distmuonadamw_compute_adamw",
+      "community": 8,
+      "norm_label": "._compute_adamw()"
+    },
+    {
+      "label": "._compute_muon()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L505",
+      "id": "gpt_optim_distmuonadamw_compute_muon",
+      "community": 5,
+      "norm_label": "._compute_muon()"
+    },
+    {
+      "label": "._finish_gathers()",
+      "file_type": "code",
+      "source_file": "optim.py",
+      "source_location": "L575",
+      "id": "gpt_optim_distmuonadamw_finish_gathers",
+      "community": 8,
+      "norm_label": "._finish_gathers()"
+    },
+    {
+      "label": "A nice and efficient mixed AdamW/Muon Combined Optimizer. Usually the embeddings",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L1",
+      "id": "gpt_optim_rationale_1",
+      "community": 4,
+      "norm_label": "a nice and efficient mixed adamw/muon combined optimizer. usually the embeddings"
+    },
+    {
+      "label": "Fused AdamW step: weight_decay -> momentum_update -> bias_correction -> param_up",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L35",
+      "id": "gpt_optim_rationale_35",
+      "community": 4,
+      "norm_label": "fused adamw step: weight_decay -> momentum_update -> bias_correction -> param_up"
+    },
+    {
+      "label": "Fused Muon step: momentum -> polar_express -> variance_reduction -> cautious_upd",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L107",
+      "id": "gpt_optim_rationale_107",
+      "community": 5,
+      "norm_label": "fused muon step: momentum -> polar_express -> variance_reduction -> cautious_upd"
+    },
+    {
+      "label": "Combined optimizer: Muon for 2D matrix params, AdamW for others, single GPU vers",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L162",
+      "id": "gpt_optim_rationale_162",
+      "community": 1,
+      "norm_label": "combined optimizer: muon for 2d matrix params, adamw for others, single gpu vers"
+    },
+    {
+      "label": "AdamW update for each param in the group individually.         Lazy init the sta",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L205",
+      "id": "gpt_optim_rationale_205",
+      "community": 4,
+      "norm_label": "adamw update for each param in the group individually.         lazy init the sta"
+    },
+    {
+      "label": "Muon update for all params in the group (stacked for efficiency).         Lazy i",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L247",
+      "id": "gpt_optim_rationale_247",
+      "community": 5,
+      "norm_label": "muon update for all params in the group (stacked for efficiency).         lazy i"
+    },
+    {
+      "label": "Combined distributed optimizer: Muon for 2D matrix params, AdamW for others.",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L325",
+      "id": "gpt_optim_rationale_325",
+      "community": 3,
+      "norm_label": "combined distributed optimizer: muon for 2d matrix params, adamw for others."
+    },
+    {
+      "label": "Launch async reduce ops for AdamW group. Returns info dict with per-param infos.",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L398",
+      "id": "gpt_optim_rationale_398",
+      "community": 3,
+      "norm_label": "launch async reduce ops for adamw group. returns info dict with per-param infos."
+    },
+    {
+      "label": "Launch async reduce op for Muon group. Returns info dict.",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L424",
+      "id": "gpt_optim_rationale_424",
+      "community": 3,
+      "norm_label": "launch async reduce op for muon group. returns info dict."
+    },
+    {
+      "label": "Wait for reduce, compute AdamW updates, launch gathers for large params.",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L456",
+      "id": "gpt_optim_rationale_456",
+      "community": 8,
+      "norm_label": "wait for reduce, compute adamw updates, launch gathers for large params."
+    },
+    {
+      "label": "Wait for reduce, compute Muon updates, launch gather.",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L508",
+      "id": "gpt_optim_rationale_508",
+      "community": 5,
+      "norm_label": "wait for reduce, compute muon updates, launch gather."
+    },
+    {
+      "label": "Wait for all gathers and copy Muon params back.",
+      "file_type": "rationale",
+      "source_file": "optim.py",
+      "source_location": "L576",
+      "id": "gpt_optim_rationale_576",
+      "community": 8,
+      "norm_label": "wait for all gathers and copy muon params back."
+    },
+    {
+      "label": "gpt.py",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L1",
+      "id": "gpt_py",
+      "community": 1,
+      "norm_label": "gpt.py"
+    },
+    {
+      "label": "GPTConfig",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L17",
+      "id": "gpt_gpt_gptconfig",
+      "community": 1,
+      "norm_label": "gptconfig"
+    },
+    {
+      "label": "norm()",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L26",
+      "id": "gpt_gpt_norm",
+      "community": 1,
+      "norm_label": "norm()"
+    },
+    {
+      "label": "Linear",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L30",
+      "id": "gpt_gpt_linear",
+      "community": 1,
+      "norm_label": "linear"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L31",
+      "id": "gpt_gpt_linear_forward",
+      "community": 1,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "has_ve()",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L35",
+      "id": "gpt_gpt_has_ve",
+      "community": 1,
+      "norm_label": "has_ve()"
+    },
+    {
+      "label": "apply_rotary_emb()",
+      "file_type": "code",
+      "source_file": "gpt.py",
+      "source_location": "L39",
+      "id": "gpt_gpt_apply_rotary_emb",
+      "community": 1,
+      "norm_label": "apply_rotary_emb()"
+    },
+    {
+      "label": "settings.local.json",
+      "file_type": "code",
+      "source_file": ".claude/settings.local.json",
+      "source_location": "L1",
+      "id": "claude_settings_local_json",
+      "community": 11,
+      "norm_label": "settings.local.json"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_rustbpe_tokenizer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_train_from_iterator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_load_from_file",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_from_pretrained",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_encode_special",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L265",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_get_tokenizer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L270",
+      "weight": 1.0,
+      "source": "tokenizer_py",
+      "target": "gpt_tokenizer_get_tokenizer_bytes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_get_vocab_size",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_get_special_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_get_bos_token_id",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L94",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_encode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_call",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L123",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_decode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_save",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L227",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_visualize_tokenization",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L242",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_render_for_completion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_init",
+      "target": "gpt_tokenizer_encode_special",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L267",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_get_tokenizer",
+      "target": "gpt_tokenizer_load_from_file",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_encode",
+      "target": "gpt_tokenizer_encode_special",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L164",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "target": "gpt_tokenizer_encode_special",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L260",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_render_for_completion",
+      "target": "gpt_tokenizer_encode_special",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L162",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_get_bos_token_id",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_call",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_encode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L190",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_encode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L235",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_visualize_tokenization",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_decode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L257",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rustbpe_tokenizer_render_for_completion",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rationale_134",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L228",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rationale_228",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_visualize_tokenization",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tokenizer.py",
+      "source_location": "L243",
+      "weight": 1.0,
+      "source": "gpt_tokenizer_rationale_243",
+      "target": "gpt_tokenizer_rustbpe_tokenizer_render_for_completion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "common.py",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "common_py",
+      "target": "gpt_common_get_base_dir",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "common.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "common_py",
+      "target": "gpt_common_save_training_metadata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "common.py",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "common_py",
+      "target": "gpt_common_detect_compute_dtype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "common.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "gpt_common_rationale_26",
+      "target": "gpt_common_save_training_metadata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dataset.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "dataset_py",
+      "target": "gpt_dataset_list_parquet_files",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dataset.py",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "dataset_py",
+      "target": "gpt_dataset_parquet_iter_batched",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dataset.py",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "dataset_py",
+      "target": "gpt_dataset_download_single_file",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "dataset.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "gpt_dataset_parquet_iter_batched",
+      "target": "gpt_dataset_list_parquet_files",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "flash_attention_py",
+      "target": "gpt_flash_attention_load_flash_attention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "flash_attention_py",
+      "target": "gpt_flash_attention_use_fa3",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "flash_attention_py",
+      "target": "gpt_flash_attention_sdpa_attention_cal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "flash_attention_py",
+      "target": "gpt_flash_attention_flash_attn_func",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L131",
+      "weight": 1.0,
+      "source": "flash_attention_py",
+      "target": "gpt_flash_attention_flash_attn_kv_func",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "gpt_flash_attention_rationale_12",
+      "target": "gpt_flash_attention_load_flash_attention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "gpt_flash_attention_flash_attn_func",
+      "target": "gpt_flash_attention_sdpa_attention_cal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L178",
+      "weight": 1.0,
+      "source": "gpt_flash_attention_flash_attn_kv_func",
+      "target": "gpt_flash_attention_sdpa_attention_cal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "gpt_flash_attention_rationale_50",
+      "target": "gpt_flash_attention_sdpa_attention_cal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "gpt_flash_attention_rationale_107",
+      "target": "gpt_flash_attention_flash_attn_func",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "flash_attention.py",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "gpt_flash_attention_rationale_134",
+      "target": "gpt_flash_attention_flash_attn_kv_func",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "optim_py",
+      "target": "gpt_optim_adamw_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "optim_py",
+      "target": "gpt_optim_muon_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L161",
+      "weight": 1.0,
+      "source": "optim_py",
+      "target": "gpt_optim_muonadamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L587",
+      "weight": 1.0,
+      "source": "optim_py",
+      "target": "gpt_optim_step",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L324",
+      "weight": 1.0,
+      "source": "optim_py",
+      "target": "gpt_optim_distmuonadamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_1",
+      "target": "optim_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L233",
+      "weight": 1.0,
+      "source": "gpt_optim_muonadamw_step_adamw",
+      "target": "gpt_optim_adamw_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L485",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw_compute_adamw",
+      "target": "gpt_optim_adamw_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_35",
+      "target": "gpt_optim_adamw_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L292",
+      "weight": 1.0,
+      "source": "gpt_optim_muonadamw_step_muon",
+      "target": "gpt_optim_muon_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L549",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw_compute_muon",
+      "target": "gpt_optim_muon_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_107",
+      "target": "gpt_optim_muon_step_fused",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L188",
+      "weight": 1.0,
+      "source": "gpt_optim_muonadamw",
+      "target": "gpt_optim_muonadamw_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L204",
+      "weight": 1.0,
+      "source": "gpt_optim_muonadamw",
+      "target": "gpt_optim_muonadamw_step_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L246",
+      "weight": 1.0,
+      "source": "gpt_optim_muonadamw",
+      "target": "gpt_optim_muonadamw_step_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L162",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_162",
+      "target": "gpt_optim_muonadamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "gpt.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "source": "gpt_gpt_gptconfig",
+      "target": "gpt_optim_muonadamw",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "gpt.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "source": "gpt_gpt_linear",
+      "target": "gpt_optim_muonadamw",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L189",
+      "weight": 1.0,
+      "source": "gpt_optim_muonadamw_init",
+      "target": "gpt_optim_distmuonadamw_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L312",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_muonadamw_step_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L205",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_205",
+      "target": "gpt_optim_muonadamw_step_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L314",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_muonadamw_step_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L247",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_247",
+      "target": "gpt_optim_muonadamw_step_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L595",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_distmuonadamw_reduce_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L597",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_distmuonadamw_reduce_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L605",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_distmuonadamw_compute_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L607",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_distmuonadamw_compute_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L612",
+      "weight": 1.0,
+      "source": "gpt_optim_step",
+      "target": "gpt_optim_distmuonadamw_finish_gathers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L383",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw",
+      "target": "gpt_optim_distmuonadamw_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L397",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw",
+      "target": "gpt_optim_distmuonadamw_reduce_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L423",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw",
+      "target": "gpt_optim_distmuonadamw_reduce_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L453",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw",
+      "target": "gpt_optim_distmuonadamw_compute_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L505",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw",
+      "target": "gpt_optim_distmuonadamw_compute_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L575",
+      "weight": 1.0,
+      "source": "gpt_optim_distmuonadamw",
+      "target": "gpt_optim_distmuonadamw_finish_gathers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L325",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_325",
+      "target": "gpt_optim_distmuonadamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "gpt.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "source": "gpt_gpt_gptconfig",
+      "target": "gpt_optim_distmuonadamw",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "gpt.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "source": "gpt_gpt_linear",
+      "target": "gpt_optim_distmuonadamw",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L398",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_398",
+      "target": "gpt_optim_distmuonadamw_reduce_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L424",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_424",
+      "target": "gpt_optim_distmuonadamw_reduce_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L456",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_456",
+      "target": "gpt_optim_distmuonadamw_compute_adamw",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L508",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_508",
+      "target": "gpt_optim_distmuonadamw_compute_muon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "optim.py",
+      "source_location": "L576",
+      "weight": 1.0,
+      "source": "gpt_optim_rationale_576",
+      "target": "gpt_optim_distmuonadamw_finish_gathers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "gpt.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "gpt_py",
+      "target": "gpt_gpt_gptconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "gpt.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "gpt_py",
+      "target": "gpt_gpt_norm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "gpt.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "gpt_py",
+      "target": "gpt_gpt_linear",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "gpt.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "gpt_py",
+      "target": "gpt_gpt_has_ve",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "gpt.py",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "gpt_py",
+      "target": "gpt_gpt_apply_rotary_emb",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "gpt.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "context": "call",
+      "source": "gpt_gpt_linear_forward",
+      "target": "gpt_gpt_linear",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "a4246ee405202e31f0dc69983d1e8af7252be811"
+}

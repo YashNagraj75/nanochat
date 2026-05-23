@@ -141,3 +141,29 @@ def save_training_metadata(
     print(f"Saved metadata markdown to {markdown_path}")
 
     return metadata
+
+
+def _detect_compute_dtype():
+    env = os.environ.get("NANOCHAT_COMPUTE_DTYPE")
+    if env is not None:
+        env = env.lower()
+        if env in _DTYPE_MAP:
+            return env
+        if torch.cuda.is_available():
+            capability = torch.cuda.get_device_capability()
+            if capability >= (8, 0):
+                return (
+                    torch.bfloat16,
+                    f"Auto-detected: CUDA SM: {capability[0]}{capability[1]} (bf16 supported)",
+                )
+            return (
+                torch.float32,
+                f"Auto-detected: CUDA {capability[0]}{capability[1]}, (bfloat16 not supported)",
+            )
+        return (
+            torch.float32,
+            f"Auto-detected (CPU/MPS): {capability[0]}{capability[1]}",
+        )
+
+
+COMPUTE_DTYPE, COMPUTE_DTYPE_REASON = _detect_compute_dtype()

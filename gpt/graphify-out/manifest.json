@@ -1,0 +1,42 @@
+{
+  "/home/yash/nanochat/gpt/tokenizer.py": {
+    "mtime": 1778509259.8516335,
+    "ast_hash": "ed20c487b58bda4dfc2d5473de3f00f5",
+    "semantic_hash": "ed20c487b58bda4dfc2d5473de3f00f5"
+  },
+  "/home/yash/nanochat/gpt/common.py": {
+    "mtime": 1778927634.7713122,
+    "ast_hash": "0dd421ce51bcde28b3a6d09f219e6093",
+    "semantic_hash": "0dd421ce51bcde28b3a6d09f219e6093"
+  },
+  "/home/yash/nanochat/gpt/__init__.py": {
+    "mtime": 1778512469.5363073,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/yash/nanochat/gpt/dataset.py": {
+    "mtime": 1778591500.3758547,
+    "ast_hash": "68939a0717b523b0cc4bee7834c4da69",
+    "semantic_hash": "68939a0717b523b0cc4bee7834c4da69"
+  },
+  "/home/yash/nanochat/gpt/flash_attention.py": {
+    "mtime": 1778922385.269259,
+    "ast_hash": "965134fdbe40f53480efaceb4f1f8f7f",
+    "semantic_hash": "965134fdbe40f53480efaceb4f1f8f7f"
+  },
+  "/home/yash/nanochat/gpt/optim.py": {
+    "mtime": 1778922526.889248,
+    "ast_hash": "d2412aec9bac4ba49cd86cca1e1fa4a4",
+    "semantic_hash": "d2412aec9bac4ba49cd86cca1e1fa4a4"
+  },
+  "/home/yash/nanochat/gpt/gpt.py": {
+    "mtime": 1779429979.0254402,
+    "ast_hash": "9a7f02d29f8fccab0d60c8091ef541e5",
+    "semantic_hash": "9a7f02d29f8fccab0d60c8091ef541e5"
+  },
+  "/home/yash/nanochat/gpt/.claude/settings.local.json": {
+    "mtime": 1778315743.0607533,
+    "ast_hash": "8a80554c91d9fca8acb82f023de02f11",
+    "semantic_hash": "8a80554c91d9fca8acb82f023de02f11"
+  }
+}

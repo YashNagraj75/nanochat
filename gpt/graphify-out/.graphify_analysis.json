@@ -1,0 +1,249 @@
+{
+  "communities": {
+    "0": [
+      "gpt_tokenizer_encode_special",
+      "gpt_tokenizer_rationale_134",
+      "gpt_tokenizer_rationale_228",
+      "gpt_tokenizer_rationale_243",
+      "gpt_tokenizer_rustbpe_tokenizer",
+      "gpt_tokenizer_rustbpe_tokenizer_call",
+      "gpt_tokenizer_rustbpe_tokenizer_decode",
+      "gpt_tokenizer_rustbpe_tokenizer_encode",
+      "gpt_tokenizer_rustbpe_tokenizer_get_bos_token_id",
+      "gpt_tokenizer_rustbpe_tokenizer_get_special_tokens",
+      "gpt_tokenizer_rustbpe_tokenizer_get_vocab_size",
+      "gpt_tokenizer_rustbpe_tokenizer_init",
+      "gpt_tokenizer_rustbpe_tokenizer_render_conversation",
+      "gpt_tokenizer_rustbpe_tokenizer_render_for_completion",
+      "gpt_tokenizer_rustbpe_tokenizer_save",
+      "gpt_tokenizer_rustbpe_tokenizer_visualize_tokenization"
+    ],
+    "1": [
+      "gpt_gpt_apply_rotary_emb",
+      "gpt_gpt_gptconfig",
+      "gpt_gpt_has_ve",
+      "gpt_gpt_linear",
+      "gpt_gpt_linear_forward",
+      "gpt_gpt_norm",
+      "gpt_optim_distmuonadamw_init",
+      "gpt_optim_muonadamw",
+      "gpt_optim_muonadamw_init",
+      "gpt_optim_rationale_162",
+      "gpt_py"
+    ],
+    "2": [
+      "flash_attention_py",
+      "gpt_flash_attention_flash_attn_func",
+      "gpt_flash_attention_flash_attn_kv_func",
+      "gpt_flash_attention_load_flash_attention",
+      "gpt_flash_attention_rationale_107",
+      "gpt_flash_attention_rationale_12",
+      "gpt_flash_attention_rationale_134",
+      "gpt_flash_attention_rationale_50",
+      "gpt_flash_attention_sdpa_attention_cal",
+      "gpt_flash_attention_use_fa3"
+    ],
+    "3": [
+      "gpt_optim_distmuonadamw",
+      "gpt_optim_distmuonadamw_reduce_adamw",
+      "gpt_optim_distmuonadamw_reduce_muon",
+      "gpt_optim_rationale_325",
+      "gpt_optim_rationale_398",
+      "gpt_optim_rationale_424"
+    ],
+    "4": [
+      "gpt_optim_adamw_step_fused",
+      "gpt_optim_muonadamw_step_adamw",
+      "gpt_optim_rationale_1",
+      "gpt_optim_rationale_205",
+      "gpt_optim_rationale_35",
+      "optim_py"
+    ],
+    "5": [
+      "gpt_optim_distmuonadamw_compute_muon",
+      "gpt_optim_muon_step_fused",
+      "gpt_optim_muonadamw_step_muon",
+      "gpt_optim_rationale_107",
+      "gpt_optim_rationale_247",
+      "gpt_optim_rationale_508"
+    ],
+    "6": [
+      "gpt_tokenizer_from_pretrained",
+      "gpt_tokenizer_get_tokenizer",
+      "gpt_tokenizer_get_tokenizer_bytes",
+      "gpt_tokenizer_load_from_file",
+      "gpt_tokenizer_train_from_iterator",
+      "tokenizer_py"
+    ],
+    "7": [
+      "common_py",
+      "gpt_common_detect_compute_dtype",
+      "gpt_common_get_base_dir",
+      "gpt_common_rationale_26",
+      "gpt_common_save_training_metadata"
+    ],
+    "8": [
+      "gpt_optim_distmuonadamw_compute_adamw",
+      "gpt_optim_distmuonadamw_finish_gathers",
+      "gpt_optim_rationale_456",
+      "gpt_optim_rationale_576",
+      "gpt_optim_step"
+    ],
+    "9": [
+      "dataset_py",
+      "gpt_dataset_download_single_file",
+      "gpt_dataset_list_parquet_files",
+      "gpt_dataset_parquet_iter_batched"
+    ],
+    "10": [
+      "init_py"
+    ],
+    "11": [
+      "claude_settings_local_json"
+    ]
+  },
+  "cohesion": {
+    "0": 0.19166666666666668,
+    "1": 0.2,
+    "2": 0.24444444444444444,
+    "3": 0.3333333333333333,
+    "4": 0.3333333333333333,
+    "5": 0.3333333333333333,
+    "6": 0.4,
+    "7": 0.4,
+    "8": 0.4,
+    "9": 0.6666666666666666,
+    "10": 1.0,
+    "11": 1.0
+  },
+  "gods": [
+    {
+      "id": "gpt_tokenizer_rustbpe_tokenizer",
+      "label": "RustBPE_Tokenizer",
+      "degree": 12
+    },
+    {
+      "id": "gpt_optim_distmuonadamw",
+      "label": "DistMuonAdamW",
+      "degree": 10
+    },
+    {
+      "id": "gpt_optim_step",
+      "label": "step()",
+      "degree": 8
+    },
+    {
+      "id": "gpt_optim_muonadamw",
+      "label": "MuonAdamW",
+      "degree": 7
+    },
+    {
+      "id": "gpt_tokenizer_encode_special",
+      "label": "encode_special()",
+      "degree": 5
+    },
+    {
+      "id": "gpt_flash_attention_sdpa_attention_cal",
+      "label": "_sdpa_attention_cal()",
+      "degree": 4
+    },
+    {
+      "id": "gpt_optim_adamw_step_fused",
+      "label": "adamw_step_fused()",
+      "degree": 4
+    },
+    {
+      "id": "gpt_optim_muon_step_fused",
+      "label": "muon_step_fused()",
+      "degree": 4
+    },
+    {
+      "id": "gpt_gpt_linear",
+      "label": "Linear",
+      "degree": 4
+    },
+    {
+      "id": "gpt_flash_attention_flash_attn_func",
+      "label": "flash_attn_func()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "GPTConfig",
+      "target": "DistMuonAdamW",
+      "source_files": [
+        "gpt.py",
+        "optim.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "Linear",
+      "target": "DistMuonAdamW",
+      "source_files": [
+        "gpt.py",
+        "optim.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "GPTConfig",
+      "target": "MuonAdamW",
+      "source_files": [
+        "gpt.py",
+        "optim.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "Linear",
+      "target": "MuonAdamW",
+      "source_files": [
+        "gpt.py",
+        "optim.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `DistMuonAdamW` connect `Community 3` to `Community 8`, `Community 1`, `Community 4`, `Community 5`?",
+      "why": "High betweenness centrality (0.074) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `RustBPE_Tokenizer` connect `Community 0` to `Community 6`?",
+      "why": "High betweenness centrality (0.050) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `MuonAdamW` connect `Community 1` to `Community 4`, `Community 5`?",
+      "why": "High betweenness centrality (0.041) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `DistMuonAdamW` (e.g. with `GPTConfig` and `Linear`) actually correct?",
+      "why": "`DistMuonAdamW` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `MuonAdamW` (e.g. with `GPTConfig` and `Linear`) actually correct?",
+      "why": "`MuonAdamW` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Tokenize the converstion which is called as doc or document.         Returns ids`, `Small helper function useful in debugging: visualize the tokenization of render_`, `Used during Reinforcement Learning. In that setting, we want to         render t` to the rest of the system?",
+      "why": "20 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}
