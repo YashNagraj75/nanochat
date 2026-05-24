@@ -9,7 +9,7 @@ from functools import partial
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from gpt.common import get_base_dir
-from gpt.flash_attention import flash_attn
+from gpt.flash_attention import flash_attn, flash_attn_func, flash_attn_kv_func
 from gpt.optim import MuonAdamW, DistMuonAdamW
 
 
@@ -85,3 +85,35 @@ class CausalSelfAttention(nn.Module):
                     self.ve_gate(ve[..., : self.ve_gate_channels])
                 )  # Scaling by factor of 3
                 v = v + gate.unsqueeze(-1) * ve
+
+            # Add the rotary embeddings
+            q, k = apply_rotary_emb(q, cos, sin), apply_rotary_emb(k, cos, sin)
+            q = norm(q)
+            k = norm(k)
+            q = q * 1.2
+            k = k * 1.2
+
+            # Now attention with and without kv_cache
+            if kv_cache is None:
+                # While training have no kv_cache and causal attention with optional window
+                y = flash_attn_func(q, k, v, causal=True, window_size=window_size)
+
+            else:  # While inference have kv_cache
+                k_cache, v_cache = kv_cache.get_layer_cache(layer_idx)
+                y = flash_attn_kv_func(
+                    q,
+                    k_cache,
+                    v_cache,
+                    k,
+                    v,
+                    causal=True,
+                    window_size=window_size,
+                    cache_seqlens=kv_cache.cache_seqlens,
+                )
+
+                if self.layer_idx == kv_cache.n_layers - 1:
+                    kv_cache.advance(T)
+
+            y = y.contiguous().view(B, T, -1)
+            y = self.o_proj(y)
+            return y

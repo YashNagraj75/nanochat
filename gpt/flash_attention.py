@@ -92,8 +92,13 @@ def _sdpa_attention_cal(q, k, v, window_size, enable_gqa):
      and not the future tokens which will be the case if we use is_causal mask
     """
     q_idx = (Tk - Tq) + torch.arange(Tq, device=device).unsqueeze(0)
+    """
+    So here we are calculating the row_idx of the qin coming query vector so if Tk = 100 and incominh query is of length Tq =5 then the position of the queries will be 95, 96, 97,98, 99 so (100 - 5) + [0,1,2,3,4] gives you that
+    """
     k_idx = torch.arange(Tk, device=device).unsqueeze(0)
-    mask = k_idx <= q_idx
+    mask = (
+        k_idx <= q_idx
+    )  # this is a check cus query has to attend to key tokens behind it so the position of k will be lesser than q
 
     if window >= 0 and window < Tk:
         mask = mask & ((q_idx - k_idx) <= window)
