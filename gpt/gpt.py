@@ -220,7 +220,7 @@ class GPT(nn.Module):
             (config.vocab_size + pad_vocab_size_to - 1) // pad_vocab_size_to
         ) * pad_vocab_size_to
         if padded_vocab_size != config.vocab_size:
-            print0(
+            print(
                 f"Padding vocab_size from {config.vocab_size} to {padded_vocab_size} for efficiency"
             )
         self.transformer = nn.ModuleDict(
@@ -270,3 +270,43 @@ class GPT(nn.Module):
             "cos", cos, persistent=False
         )  # persistent=False means it's not saved to the checkpoint
         self.register_buffer("sin", sin, persistent=False)
+
+    @torch.no_grad():os.wait
+    def init_weights(self):
+        """
+        Inits weight
+            1. wte (embedding): normal, std= 1.0
+            2. lm_head: normal, std= 0.001
+            for all the blocks:
+              1. q_proj, k_proj, v_proj: uniform, std= 1/sqrt(n_embed)
+              2. o_proj: zeros
+              3. mlp_fc1: uniform, std= 1/sqrt(n_embed)
+              4. mlp_fc2: zeros
+        """
+
+        torch.nn.init.normal_(self.transformer.wte.weight, mean=0.0, std=1.0)
+        torch.nn.init.normal_(self.lm_head.weight, mean=0.0, std=0.001)
+
+
+        # Now for the transformer blocks
+        n_embed = self.config.n_embed
+        a = 3**0.5 * n_embed ** -0.5 
+        for block in self.transformer.h:
+            torch.nn.init.uniform_(block.attn.q_proj.weight, -a,a)
+            torch.nn.init.uniform_(block.attn.k_proj.weight, -a,a)
+            torch.nn.init.uniform_(block.attn.v_proj.weight, -a,a)
+            torch.nn.init.uniform_(block.mlp.fc1.weight, -a,a)  # Ablation instead of 0.4 times lets just do same as the attn heads
+            torch.nn.init.zeros_(block.attn.o_proj.weight)
+            torch.nn.init.zeros_(block.mlp.fc2.weight)
+
+        # Per layer initializations
+        layers = self.config.n_layer
+        for layer in range(layers):
+            self.resid_lambdas.data[layer] = 1.15 - (0.1 * layer / max(layers -1, 1))
+
+
+
+
+
+
+
