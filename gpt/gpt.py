@@ -8,7 +8,7 @@ from functools import partial
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from gpt.common import get_base_dir
+from gpt.common import COMPUTE_DTYPE, get_base_dir
 from gpt.flash_attention import flash_attn, flash_attn_func, flash_attn_kv_func
 from gpt.optim import MuonAdamW, DistMuonAdamW
 
@@ -266,6 +266,7 @@ class GPT(nn.Module):
         )  # 10X over-compute should be enough, TODO make nicer?
         head_dim = config.n_embd // config.n_head
         cos, sin = self._precompute_rotary_embeddings(self.rotary_seq_len, head_dim)
+        self.cos, self.sin = cos, sin
         self.register_buffer(
             "cos", cos, persistent=False
         )  # persistent=False means it's not saved to the checkpoint
@@ -303,6 +304,43 @@ class GPT(nn.Module):
         layers = self.config.n_layer
         for layer in range(layers):
             self.resid_lambdas.data[layer] = 1.15 - (0.1 * layer / max(layers -1, 1))
+            self.x0_lambdas.data[layer] = 0.20 - (0.15 * layer / max(layers -1, 1)) # initial layers get more embeddings blending
+
+        # Smear and blackout gates 
+        torch.nn.init.zeros_(self.smear_lambda)
+        torch.nn.init.constant_(self.backout_lambda, 0.2)
+        torch.nn.init.uniform_(self.smear_gate.weight, 0.1, 0.15)
+
+        # Now value embeddings same as v_proj
+        for ve in self.value_embeds.values():
+            torch.nn.init.uniform_(ve.weight, -a,a)
+
+        # Now init the value_gates at a higher value so that they start slightly higher than neutral
+        for block in self.transformer.h:
+            if block.attn.ve_gate is not None:
+                torch.nn.init.uniform_(block.attn.ve_gate.weight, 0.0,0.2)
+
+
+        if COMPUTE_DTYPE != torch.float16:
+            self.transformer.wte.to(dtype=COMPUTE_DTYPE)
+            for ve in self.value_embeds.values():
+                ve.to(dtype=COMPUTE_DTYPE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
