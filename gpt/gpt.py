@@ -272,7 +272,7 @@ class GPT(nn.Module):
         )  # persistent=False means it's not saved to the checkpoint
         self.register_buffer("sin", sin, persistent=False)
 
-    @torch.no_grad():os.wait
+    @torch.no_grad()
     def init_weights(self):
         """
         Inits weight
@@ -288,63 +288,55 @@ class GPT(nn.Module):
         torch.nn.init.normal_(self.transformer.wte.weight, mean=0.0, std=1.0)
         torch.nn.init.normal_(self.lm_head.weight, mean=0.0, std=0.001)
 
-
         # Now for the transformer blocks
         n_embed = self.config.n_embed
-        a = 3**0.5 * n_embed ** -0.5 
+        a = 3**0.5 * n_embed**-0.5
         for block in self.transformer.h:
-            torch.nn.init.uniform_(block.attn.q_proj.weight, -a,a)
-            torch.nn.init.uniform_(block.attn.k_proj.weight, -a,a)
-            torch.nn.init.uniform_(block.attn.v_proj.weight, -a,a)
-            torch.nn.init.uniform_(block.mlp.fc1.weight, -a,a)  # Ablation instead of 0.4 times lets just do same as the attn heads
+            torch.nn.init.uniform_(block.attn.q_proj.weight, -a, a)
+            torch.nn.init.uniform_(block.attn.k_proj.weight, -a, a)
+            torch.nn.init.uniform_(block.attn.v_proj.weight, -a, a)
+            torch.nn.init.uniform_(
+                block.mlp.fc1.weight, -a, a
+            )  # Ablation instead of 0.4 times lets just do same as the attn heads
             torch.nn.init.zeros_(block.attn.o_proj.weight)
             torch.nn.init.zeros_(block.mlp.fc2.weight)
 
         # Per layer initializations
         layers = self.config.n_layer
         for layer in range(layers):
-            self.resid_lambdas.data[layer] = 1.15 - (0.1 * layer / max(layers -1, 1))
-            self.x0_lambdas.data[layer] = 0.20 - (0.15 * layer / max(layers -1, 1)) # initial layers get more embeddings blending
+            self.resid_lambdas.data[layer] = 1.15 - (0.1 * layer / max(layers - 1, 1))
+            self.x0_lambdas.data[layer] = 0.20 - (
+                0.15 * layer / max(layers - 1, 1)
+            )  # initial layers get more embeddings blending
 
-        # Smear and blackout gates 
+        # Smear and blackout gates
         torch.nn.init.zeros_(self.smear_lambda)
         torch.nn.init.constant_(self.backout_lambda, 0.2)
         torch.nn.init.uniform_(self.smear_gate.weight, 0.1, 0.15)
 
         # Now value embeddings same as v_proj
         for ve in self.value_embeds.values():
-            torch.nn.init.uniform_(ve.weight, -a,a)
+            torch.nn.init.uniform_(ve.weight, -a, a)
 
         # Now init the value_gates at a higher value so that they start slightly higher than neutral
         for block in self.transformer.h:
             if block.attn.ve_gate is not None:
-                torch.nn.init.uniform_(block.attn.ve_gate.weight, 0.0,0.2)
-
+                torch.nn.init.uniform_(block.attn.ve_gate.weight, 0.0, 0.2)
 
         if COMPUTE_DTYPE != torch.float16:
             self.transformer.wte.to(dtype=COMPUTE_DTYPE)
             for ve in self.value_embeds.values():
                 ve.to(dtype=COMPUTE_DTYPE)
 
+    def _precompute_rotary_embeddings(
+        self, seq_len, head_dim, base=100000, device=None
+    ):
+        inv_freq = 1 / (
+            base
+            ** (
+                torch.arange(0, head_dim, 2, dtype=torch.float32, device=device)
+                / head_dim
+            )
+        )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # Generate the timesteps

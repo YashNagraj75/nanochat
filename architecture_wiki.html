@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nanochat Architecture Wiki</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#7d8590;
+  --accent:#58a6ff;--green:#3fb950;--orange:#e3b341;
+  --red:#f85149;--purple:#bc8cff;--teal:#56d364;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
+
+/* SIDEBAR */
+#sidebar{width:230px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.25rem 0;flex-shrink:0}
+#sidebar .brand{padding:0 1rem 1.25rem;border-bottom:1px solid var(--border);margin-bottom:.75rem}
+#sidebar .brand h2{font-size:.8rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
+#sidebar .brand p{font-size:.72rem;color:var(--muted);margin-top:.2rem}
+#sidebar a{display:flex;align-items:center;gap:.5rem;padding:.38rem 1rem;color:var(--muted);text-decoration:none;font-size:.8rem;transition:all .15s;border-left:2px solid transparent}
+#sidebar a:hover,#sidebar a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent)}
+#sidebar a .num{font-size:.68rem;background:var(--bg3);color:var(--muted);padding:.1rem .4rem;border-radius:.25rem;min-width:1.4rem;text-align:center;font-family:monospace}
+#sidebar a.active .num{background:var(--accent);color:var(--bg)}
+
+/* MAIN */
+#main{flex:1;max-width:900px;padding:2.5rem 3rem;overflow-x:hidden}
+
+/* HERO */
+#hero{margin-bottom:3rem}
+#hero h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.4rem}
+#hero p{color:var(--muted);font-size:.88rem}
+
+/* SECTIONS */
+.section{margin-bottom:5rem;scroll-margin-top:2rem}
+.section-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+.section-header h2{font-size:1.35rem;font-weight:700}
+.snum{font-size:.7rem;font-weight:700;color:var(--bg);background:var(--accent);padding:.2rem .5rem;border-radius:.25rem}
+
+/* TLDR */
+.tldr{background:linear-gradient(135deg,rgba(88,166,255,.07),rgba(88,166,255,.02));border:1px solid rgba(88,166,255,.22);border-radius:.5rem;padding:.85rem 1.15rem;margin-bottom:1.4rem;font-size:.87rem}
+.tldr b{color:var(--accent);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.3rem}
+
+/* CALLOUTS */
+.callout{border-radius:.5rem;padding:.8rem 1.1rem;margin:.9rem 0;font-size:.87rem}
+.callout b{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.3rem}
+.insight{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.22)}.insight b{color:var(--green)}
+.warn{background:rgba(227,179,65,.07);border:1px solid rgba(227,179,65,.22)}.warn b{color:var(--orange)}
+.danger{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22)}.danger b{color:var(--red)}
+
+/* CODE */
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:.5rem;padding:.9rem 1.1rem;overflow-x:auto;font-family:'Fira Code','Cascadia Code',monospace;font-size:.8rem;line-height:1.65;margin:.9rem 0}
+code{font-family:'Fira Code','Cascadia Code',monospace;font-size:.83em;background:var(--bg3);padding:.12em .38em;border-radius:.25rem;color:var(--purple)}
+pre code{background:none;padding:0;font-size:inherit;color:var(--text)}
+.kw{color:#ff7b72}.fn{color:#d2a8ff}.cm{color:#8b949e}.nb{color:#ffa657}.st{color:#a5d6ff}
+
+/* MATH BOX */
+.math{font-family:monospace;background:var(--bg2);border:1px solid var(--border);border-radius:.4rem;padding:.7rem 1rem;margin:.8rem 0;font-size:.92rem;text-align:center;color:var(--orange)}
+
+/* TABLE */
+table{border-collapse:collapse;width:100%;margin:.9rem 0;font-size:.85rem}
+th{background:var(--bg3);padding:.5rem .9rem;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+td{padding:.5rem .9rem;border-bottom:1px solid var(--border);font-family:monospace}
+
+/* VIZ CONTAINERS */
+.viz{background:var(--bg2);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;margin:1.25rem 0}
+.viz-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1rem}
+canvas{display:block;border-radius:.4rem;background:var(--bg)}
+
+/* CONTROLS */
+.controls{display:flex;flex-wrap:wrap;gap:1.25rem;margin-top:1.1rem;align-items:center}
+.cg{display:flex;flex-direction:column;gap:.3rem}
+.cg label{font-size:.75rem;color:var(--muted);font-family:monospace}
+input[type=range]{width:150px;accent-color:var(--accent)}
+.cv{font-size:.75rem;color:var(--accent);font-family:monospace}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.9rem 0}
+p{margin:.7rem 0}
+ul{margin:.5rem 0 .5rem 1.5rem;line-height:2}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border)}
+
+@media(max-width:860px){#sidebar{display:none}#main{padding:1.5rem}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand"><h2>nanochat</h2><p>Architecture Reference</p></div>
+  <nav>
+    <a href="#rope"><span class="num">01</span>RoPE</a>
+    <a href="#headdim"><span class="num">02</span>head_dim / GQA</a>
+    <a href="#attnflow"><span class="num">03</span>Attention Flow</a>
+    <a href="#ve"><span class="num">04</span>Value Embeddings</a>
+    <a href="#smear"><span class="num">05</span>Smear Gate</a>
+    <a href="#backout"><span class="num">06</span>Backout Lambda</a>
+    <a href="#init"><span class="num">07</span>Weight Init</a>
+    <a href="#resid"><span class="num">08</span>Residual Lambdas</a>
+  </nav>
+</aside>
+
+<main id="main">
+<div id="hero">
+  <h1>nanochat Architecture</h1>
+  <p>Interactive reference · GPT pretraining from scratch on Hopper-class GPUs</p>
+</div>
+
+<!-- ══════════════════════════════════════
+     §1  ROPE
+══════════════════════════════════════ -->
+<section class="section" id="rope">
+  <div class="section-header"><span class="snum">01</span><h2>Rotary Position Embeddings (RoPE)</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Rotate pairs of Q/K dimensions by an angle ∝ position. Dot-products then depend only on <em>relative</em> distance — absolute positions cancel out automatically.
+  </div>
+
+  <p>Instead of adding a positional vector, RoPE <strong>rotates</strong> each (x₁, x₂) pair in the head dimension by angle <code>m·θ</code>, where m is the token position and θ is a per-dimension frequency.</p>
+
+  <div class="math">
+    new_x₁ = x₁·cos(mθ) − x₂·sin(mθ)<br>
+    new_x₂ = x₂·cos(mθ) + x₁·sin(mθ)
+  </div>
+
+  <div class="viz">
+    <div class="viz-title">⟳ Interactive RoPE Visualizer — drag the sliders</div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+      <canvas id="cCircle" width="280" height="280"></canvas>
+      <canvas id="cFreq"   width="370" height="280"></canvas>
+    </div>
+    <div class="controls">
+      <div class="cg">
+        <label>Current token position m</label>
+        <input type="range" id="sPos" min="0" max="32" value="3" step="1">
+        <span class="cv" id="vPos">m = 3</span>
+      </div>
+      <div class="cg">
+        <label>Dimension pair d (frequency band)</label>
+        <input type="range" id="sDim" min="0" max="31" value="0" step="1">
+        <span class="cv" id="vDim">d = 0 · θ = 1.0000</span>
+      </div>
+      <div class="cg">
+        <label>Show N tokens on circle</label>
+        <input type="range" id="sNTok" min="2" max="32" value="10" step="1">
+        <span class="cv" id="vNTok">10 tokens</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout insight"><b>Why relative positions fall out</b>
+    Q[m] · K[n] = (R_m · q) · (R_n · k) = q · (R_m^T R_n) · k = q · R_{m-n} · k.
+    The absolute m and n cancel — only the gap (m−n) survives in the score.
+  </div>
+
+  <p>Code — stacks first and second halves, then applies the 2D rotation in parallel across all pairs:</p>
+  <pre><code><span class="kw">def</span> <span class="fn">apply_rotary_emb</span>(x, cos, sin):  <span class="cm"># x: (B, T, H, D)</span>
+    d = x.shape[-1] // 2
+    x1, x2 = x[..., :d], x[..., d:]
+    x_rot = torch.cat([-x2, x1], dim=-1)  <span class="cm"># rotate_half</span>
+    <span class="kw">return</span> x * cos + x_rot * sin</code></pre>
+
+  <p>Frequencies precomputed once (registered as a buffer, never updated by the optimizer):</p>
+  <pre><code>freqs = <span class="nb">1.0</span> / (<span class="nb">10000</span> ** (torch.arange(<span class="nb">0</span>, head_dim, <span class="nb">2</span>) / head_dim))
+t     = torch.arange(seq_len)
+freqs = torch.outer(t, freqs)                        <span class="cm"># (T, D//2)</span>
+cos   = torch.cos(freqs).repeat_interleave(<span class="nb">2</span>, dim=-<span class="nb">1</span>)  <span class="cm"># (T, D)</span>
+sin   = torch.sin(freqs).repeat_interleave(<span class="nb">2</span>, dim=-<span class="nb">1</span>)
+<span class="cm"># reshaped → (1, T, 1, D) for broadcast over (B, T, H, D)</span></code></pre>
+
+  <div class="callout warn"><b>Frequency intuition</b>
+    Low d → θ ≈ 1.0 → fast rotation → short-range patterns.<br>
+    High d → θ → 0 → slow rotation → long-range context.<br>
+    Together they give the model a multi-scale positional clock.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     §2  HEAD DIM / GQA
+══════════════════════════════════════ -->
+<section class="section" id="headdim">
+  <div class="section-header"><span class="snum">02</span><h2>head_dim = n_embd ÷ n_head (not ÷ n_kv_head)</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    head_dim is the per-head vector width, always split over query heads. GQA keeps head_dim identical across Q, K, V — only the number of K/V heads shrinks.
+  </div>
+
+  <div class="math">n_embd = n_head × head_dim &nbsp;→&nbsp; head_dim = n_embd ÷ n_head &nbsp;(e.g. 768÷12 = 64)</div>
+
+  <div class="viz">
+    <div class="viz-title">GQA layout — n_embd=768, n_head=12, n_kv_head=4, head_dim=64</div>
+    <canvas id="cGQA" width="640" height="210"></canvas>
+  </div>
+
+  <div class="callout danger"><b>Common mistake</b>
+    Using n_kv_head in the denominator (768÷4=192) breaks every projection shape and makes K/V heads incompatible with Q.
+  </div>
+
+  <table>
+    <tr><th>Tensor</th><th>Shape</th><th>Heads</th></tr>
+    <tr><td>Q</td><td>(B, T, 12, 64)</td><td>n_head query heads</td></tr>
+    <tr><td>K</td><td>(B, T, 4, 64)</td><td>n_kv_head key heads — same head_dim</td></tr>
+    <tr><td>V</td><td>(B, T, 4, 64)</td><td>each KV head shared by 3 Q heads</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════
+     §3  ATTENTION FLOW
+══════════════════════════════════════ -->
+<section class="section" id="attnflow">
+  <div class="section-header"><span class="snum">03</span><h2>Full Attention Data Flow</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    x → q/k/v_proj → RoPE on Q&K → flash_attn → reshape → o_proj → add to residual stream.
+  </div>
+
+  <div class="viz">
+    <div class="viz-title">Attention pipeline — hover nodes for details</div>
+    <canvas id="cFlow" width="640" height="360"></canvas>
+    <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem" id="flowTip">Hover over a node to see its role.</p>
+  </div>
+
+  <p>Two distinct linear layers serve opposite roles:</p>
+  <ul>
+    <li><code>q/k/v_proj</code> — compress n_embd input into per-head vectors</li>
+    <li><code>o_proj</code> — project concatenated attention output back to n_embd for the residual</li>
+  </ul>
+</section>
+
+<!-- ══════════════════════════════════════
+     §4  VALUE EMBEDDINGS
+══════════════════════════════════════ -->
+<section class="section" id="ve">
+  <div class="section-header"><span class="snum">04</span><h2>Value Embeddings (VE)</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Every other layer, inject the raw token embedding back into V via a learned gate [0, 3]. Prevents token identity from drowning in deep residual rewrites.
+  </div>
+
+  <p>In a deep transformer the residual stream gets overwritten so many times that the original token identity fades. VE anchors it back on alternating layers:</p>
+
+  <pre><code>gate = <span class="nb">3</span> * sigmoid(W_gate(x[..., :<span class="nb">12</span>]))  <span class="cm"># (B, T, n_kv_head) ∈ (0, 3)</span>
+v    = v + gate.unsqueeze(-<span class="nb">1</span>) * ve         <span class="cm"># ve = raw embedding from wte</span></code></pre>
+
+  <div class="viz">
+    <div class="viz-title">Gate mixer — drag to see how v_proj vs. ve blend</div>
+    <canvas id="cVE" width="580" height="180"></canvas>
+    <div class="controls">
+      <div class="cg">
+        <label>Gate input weight (pre-sigmoid logit)</label>
+        <input type="range" id="sGate" min="-6" max="6" value="0" step="0.05">
+        <span class="cv" id="vGate">w=0.00 · gate=1.50 · 50% identity</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="callout insight"><b>Gate ceiling = 3, not 1</b>
+      The 3× scale lets ve fully <em>dominate</em> v — not just blend but override. Model can choose "ignore context, trust raw identity."
+    </div>
+    <div class="callout warn"><b>Cheap gate: first 12 dims only</b>
+      Avoids a full 768→n_kv_head projection. 12 channels is enough signal to compute one scalar per head.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     §5  SMEAR GATE
+══════════════════════════════════════ -->
+<section class="section" id="smear">
+  <div class="section-header"><span class="snum">05</span><h2>Smear Gate</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Mix the previous token's embedding into the current one — bigram-level info injected before attention even runs. Starts at zero, opts in during training.
+  </div>
+
+  <pre><code>gate   = sigmoid(W_smear(x[..., :<span class="nb">24</span>]))    <span class="cm"># (B, T, 1) — scalar per token</span>
+x_prev = F.pad(x[:, :-<span class="nb">1</span>], (<span class="nb">0</span>,<span class="nb">0</span>,<span class="nb">1</span>,<span class="nb">0</span>))     <span class="cm"># shift right by 1 position</span>
+x      = x + gate * smear_lambda.exp() * x_prev</code></pre>
+
+  <div class="g2">
+    <div class="callout insight"><b>Why Linear(24→1)</b>
+      24 input channels (cheap, no full context needed) → 1 scalar: "how much previous token to blend?" One number per token.
+    </div>
+    <div class="callout warn"><b>smear_lambda starts at 0</b>
+      exp(0)=1, so at init the model gently opts in. Same pattern as backout_lambda — both start conservative and grow as training proceeds.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     §6  BACKOUT LAMBDA
+══════════════════════════════════════ -->
+<section class="section" id="backout">
+  <div class="section-header"><span class="snum">06</span><h2>Backout Lambda</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Subtract a fraction of the mid-layer residual from the final residual. Strips low-level noise so the LM head sees a cleaner, more abstract signal.
+  </div>
+
+  <pre><code>x_final = x_final - backout_lambda * x_mid_layer</code></pre>
+
+  <div class="viz">
+    <div class="viz-title">Signal decomposition — backout removes low-frequency residue</div>
+    <canvas id="cBackout" width="620" height="190"></canvas>
+  </div>
+
+  <div class="callout insight"><b>Image processing analogy</b>
+    Identical to unsharp masking: subtract the blurry low-frequency layer (x_mid) to make high-frequency detail (semantics, next-token predictions) stand out.
+  </div>
+
+  <div class="g2">
+    <div class="callout warn"><b>Starts at 0.2 (not 0)</b>
+      Authors already know it helps, so no opt-in needed. Compare with smear_lambda which starts at 0 and must be learned.
+    </div>
+    <div class="callout insight"><b>x_mid = mid layer</b>
+      Mid-layer residual still carries mostly low-level features (token identity, local syntax) before high-level processing dominates.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     §7  WEIGHT INIT
+══════════════════════════════════════ -->
+<section class="section" id="init">
+  <div class="section-header"><span class="snum">07</span><h2>Weight Initialization — Uniform vs Normal, and √3</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Use Uniform(−√3σ, √3σ) instead of Normal for projections. Same variance, but hard-capped — no outlier tails to destabilise bfloat16 early in training.
+  </div>
+
+  <div class="math">
+    Uniform(−a, a) &nbsp;has&nbsp; std = a/√3 &nbsp;→&nbsp; set a = √3·σ to match Normal(0,σ²)
+  </div>
+
+  <div class="viz">
+    <div class="viz-title">Distribution comparison — why Uniform wins for bfloat16 projections</div>
+    <canvas id="cInit" width="620" height="210"></canvas>
+  </div>
+
+  <table>
+    <tr><th>Distribution</th><th>std</th><th>Tails</th><th>Used for</th></tr>
+    <tr><td>Normal(0, σ²)</td><td>σ</td><td>Unbounded (3σ, 4σ outliers)</td><td>wte, lm_head</td></tr>
+    <tr><td>Uniform(−√3σ, √3σ)</td><td>σ</td><td>Hard cap at ±√3σ</td><td>all projections</td></tr>
+  </table>
+
+  <pre><code>σ = n_embd ** -<span class="nb">0.5</span>             <span class="cm"># target std</span>
+a = <span class="nb">3</span>**<span class="nb">0.5</span> * n_embd**-<span class="nb">0.5</span>      <span class="cm"># Uniform bound = √3·σ</span>
+torch.nn.init.uniform_(w, -a, a)
+
+<span class="cm"># Output projections start at zero → each block is identity at init</span>
+attn.o_proj → zeros
+mlp.c_proj  → zeros</code></pre>
+
+  <div class="callout danger"><b>bfloat16 danger</b>
+    Normal tails (3σ, 4σ values) produce large dot products in attention, causing overflow/NaN in bfloat16 at step 1. Uniform eliminates this risk entirely.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     §8  RESIDUAL LAMBDAS
+══════════════════════════════════════ -->
+<section class="section" id="resid">
+  <div class="section-header"><span class="snum">08</span><h2>Residual Lambdas — 1.15 → 1.05 Schedule</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Scale the residual stream by λ &gt; 1 before adding each block. Linearly decays 1.15 → 1.05 from early to late layers. Amplifies signal, prevents vanishing gradients in deep nets.
+  </div>
+
+  <pre><code>x = resid_lambda[i] * x + block(x)
+<span class="cm"># resid_lambdas[i] = 1.15 − 0.10 × i / (n_layer − 1)</span>
+<span class="cm"># Layer 0 → 1.15 · · · Layer N−1 → 1.05</span></code></pre>
+
+  <div class="viz">
+    <div class="viz-title">Lambda schedule — change layer count to see the curve</div>
+    <canvas id="cResid" width="620" height="200"></canvas>
+    <div class="controls">
+      <div class="cg">
+        <label>Number of layers</label>
+        <input type="range" id="sLayers" min="4" max="48" value="24" step="4">
+        <span class="cv" id="vLayers">24 layers</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="callout insight"><b>Why λ &gt; 1.0</b>
+      Amplifies the existing residual before adding the block. Keeps gradient magnitude healthy through 24+ layers.
+    </div>
+    <div class="callout warn"><b>Why it decays early→late</b>
+      Early layers transform raw embeddings (low information → need more boost). Late layers refine rich representations (less boost needed). The exact values 1.15/0.10 are empirically tuned.
+    </div>
+  </div>
+</section>
+
+</main><!-- /#main -->
+
+<script>
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const C = (id, w, h) => { const cv=$( id); cv.width=w||cv.width; cv.height=h||cv.height; return cv.getContext('2d'); };
+const lerp = (a,b,t) => a+(b-a)*t;
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const TAU = Math.PI*2;
+
+const PAL = {
+  bg:'#0d1117', bg2:'#161b22', bg3:'#21262d', border:'#30363d',
+  text:'#e6edf3', muted:'#7d8590',
+  accent:'#58a6ff', green:'#3fb950', orange:'#e3b341',
+  red:'#f85149', purple:'#bc8cff',
+};
+
+// ─────────────────────────────────────────────
+// §1  ROPE CIRCLE
+// ─────────────────────────────────────────────
+function getTheta(d){ return 1/Math.pow(10000, 2*d/64); }
+
+function drawCircle(){
+  const g=C('cCircle'), W=280, H=280, cx=W/2, cy=H/2, R=105;
+  g.clearRect(0,0,W,H);
+  g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  // grid rings
+  [.33,.67,1].forEach(f=>{
+    g.beginPath(); g.arc(cx,cy,R*f,0,TAU);
+    g.strokeStyle='#21262d'; g.lineWidth=1; g.stroke();
+  });
+  // axes
+  g.beginPath();
+  g.moveTo(cx-R-12,cy); g.lineTo(cx+R+12,cy);
+  g.moveTo(cx,cy-R-12); g.lineTo(cx,cy+R+12);
+  g.strokeStyle='#30363d'; g.lineWidth=1; g.stroke();
+  // axis labels
+  g.fillStyle=PAL.muted; g.font='11px monospace';
+  g.fillText('x₁',cx+R+3,cy-3); g.fillText('x₂',cx+4,cy-R-3);
+
+  const m=parseInt($('sPos').value);
+  const d=parseInt($('sDim').value);
+  const nTok=parseInt($('sNTok').value);
+  const theta=getTheta(d);
+
+  // token dots + trail
+  for(let i=0;i<nTok;i++){
+    const angle = -(i*theta*TAU) - Math.PI/2;
+    const x=cx+R*Math.cos(angle), y=cy+R*Math.sin(angle);
+    // connector to previous
+    if(i>0){
+      const pa=-(( i-1)*theta*TAU)-Math.PI/2;
+      const px=cx+R*Math.cos(pa), py=cy+R*Math.sin(pa);
+      g.beginPath(); g.moveTo(px,py); g.lineTo(x,y);
+      g.strokeStyle='rgba(88,166,255,.18)'; g.lineWidth=1.5; g.stroke();
+    }
+    const cur=(i===m);
+    g.beginPath(); g.arc(x,y,cur?7:3.5,0,TAU);
+    g.fillStyle=cur?PAL.accent:PAL.muted;
+    g.globalAlpha=cur?1:0.35; g.fill(); g.globalAlpha=1;
+    if(cur){
+      // spoke
+      g.beginPath(); g.moveTo(cx,cy); g.lineTo(x,y);
+      g.strokeStyle=PAL.accent; g.lineWidth=2; g.stroke();
+      // label
+      g.fillStyle=PAL.accent; g.font='bold 11px monospace';
+      g.fillText(`m=${i}`,x+9,y-4);
+    }
+  }
+
+  // angle arc
+  if(m>0){
+    const aEnd=-(m*theta*TAU)-Math.PI/2;
+    g.beginPath(); g.arc(cx,cy,36,-Math.PI/2,aEnd,true);
+    g.strokeStyle=PAL.orange; g.lineWidth=2; g.stroke();
+    const midA=(-m*theta*TAU/2)-Math.PI/2;
+    const deg=(m*theta*360).toFixed(1);
+    g.fillStyle=PAL.orange; g.font='10px monospace';
+    g.fillText(`${deg}°`,cx+50*Math.cos(midA),cy+50*Math.sin(midA)+4);
+  }
+
+  // bottom label
+  g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='center';
+  g.fillText(`θ_d = 1/10000^(2·${d}/64) = ${theta.toFixed(5)}`,cx,H-4);
+  g.textAlign='left';
+}
+
+function drawFreq(){
+  const g=C('cFreq'), W=370, H=280;
+  const PL=44,PR=12,PT=22,PB=38, PW=W-PL-PR, PH=H-PT-PB;
+  g.clearRect(0,0,W,H);
+  g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const nD=32, nP=32;
+  const m=parseInt($('sPos').value);
+  const curD=parseInt($('sDim').value);
+
+  // y-axis gridlines (0°,90°,180°,270°,360°)
+  for(let i=0;i<=4;i++){
+    const y=PT+PH*(1-i/4);
+    g.beginPath(); g.moveTo(PL,y); g.lineTo(PL+PW,y);
+    g.strokeStyle='#21262d'; g.lineWidth=1; g.stroke();
+    g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='right';
+    g.fillText((i*90)+'°',PL-3,y+3);
+  }
+  g.textAlign='left';
+
+  // one line per dim pair
+  for(let di=0;di<nD;di++){
+    const th=getTheta(di);
+    const sel=(di===curD);
+    g.beginPath();
+    for(let mi=0;mi<=nP;mi++){
+      const deg=(mi*th*360)%360;
+      const x=PL+mi/nP*PW, y=PT+PH*(1-deg/360);
+      mi===0?g.moveTo(x,y):g.lineTo(x,y);
+    }
+    const hue=lerp(200,290,di/(nD-1));
+    g.strokeStyle=sel?PAL.accent:`hsla(${hue},65%,55%,0.22)`;
+    g.lineWidth=sel?2.5:1; g.stroke();
+  }
+
+  // current token dot on selected dim
+  const th_c=getTheta(curD);
+  const deg_c=(m*th_c*360)%360;
+  const mx=PL+m/nP*PW, my=PT+PH*(1-deg_c/360);
+  g.beginPath(); g.arc(mx,my,5.5,0,TAU);
+  g.fillStyle=PAL.orange; g.fill();
+  g.fillStyle=PAL.orange; g.font='bold 9px monospace';
+  g.fillText(`m=${m}, ${deg_c.toFixed(1)}°`,mx+7,my-3);
+
+  // axis labels
+  g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='center';
+  g.fillText('Rotation angle by position (each line = one dim pair d)',PL+PW/2,PT-6);
+  g.fillText('position m →',PL+PW/2,H-4);
+  g.fillText('0',PL,PT+PH+13); g.fillText('32',PL+PW-8,PT+PH+13);
+  g.textAlign='left';
+}
+
+function ropeUpdate(){
+  const m=parseInt($('sPos').value);
+  const d=parseInt($('sDim').value);
+  const n=parseInt($('sNTok').value);
+  const th=getTheta(d);
+  $('vPos').textContent=`m = ${m}`;
+  $('vDim').textContent=`d = ${d}  ·  θ = ${th.toFixed(5)}`;
+  $('vNTok').textContent=`${n} tokens`;
+  drawCircle(); drawFreq();
+}
+['sPos','sDim','sNTok'].forEach(id=>$(id).addEventListener('input',ropeUpdate));
+ropeUpdate();
+
+// ─────────────────────────────────────────────
+// §2  GQA DIAGRAM
+// ─────────────────────────────────────────────
+(function drawGQA(){
+  const g=C('cGQA'), W=640, H=210;
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const nH=12, nKV=4, boxH=30;
+  const qW=Math.floor((W-20)/nH)-3;
+  const kvW=Math.floor((W-20)/nKV)-5;
+  const COLS=[PAL.accent,'#3fb950',PAL.orange,PAL.purple];
+
+  // Q row
+  g.fillStyle=PAL.muted; g.font='10px monospace';
+  g.fillText('Q heads  (n_head=12, head_dim=64)',10,20);
+  for(let i=0;i<nH;i++){
+    const gr=Math.floor(i/3);
+    const x=10+i*(qW+3), y=26;
+    g.fillStyle=COLS[gr]+'28'; g.strokeStyle=COLS[gr]; g.lineWidth=1.5;
+    g.beginPath(); g.roundRect(x,y,qW,boxH,3); g.fill(); g.stroke();
+    g.fillStyle=COLS[gr]; g.font='8px monospace'; g.textAlign='center';
+    g.fillText('Q'+i, x+qW/2, y+boxH/2+3);
+  }
+
+  // connecting lines
+  for(let kvi=0;kvi<nKV;kvi++){
+    for(let qi=kvi*3;qi<kvi*3+3;qi++){
+      const qx=10+qi*(qW+3)+qW/2;
+      const kx=10+kvi*(kvW+5)+kvW/2;
+      g.beginPath(); g.moveTo(qx,26+boxH);
+      g.bezierCurveTo(qx,110,kx,110,kx,136);
+      g.strokeStyle=COLS[kvi]+'55'; g.lineWidth=1.5; g.stroke();
+    }
+  }
+
+  // KV row
+  g.fillStyle=PAL.muted; g.font='10px monospace'; g.textAlign='left';
+  g.fillText('K/V heads  (n_kv_head=4, head_dim=64 — each shared by 3 Q heads)',10,130);
+  for(let i=0;i<nKV;i++){
+    const x=10+i*(kvW+5), y=136;
+    g.fillStyle=COLS[i]+'1e'; g.strokeStyle=COLS[i]; g.lineWidth=2;
+    g.beginPath(); g.roundRect(x,y,kvW,boxH+4,3); g.fill(); g.stroke();
+    g.fillStyle=COLS[i]; g.font='9px monospace'; g.textAlign='center';
+    g.fillText('KV'+i, x+kvW/2, y+(boxH+4)/2+3);
+    g.fillStyle=PAL.muted; g.font='8px monospace';
+    g.fillText('shares Q'+( i*3)+',Q'+(i*3+1)+',Q'+(i*3+2), x+kvW/2, y+boxH+18);
+  }
+  g.textAlign='left';
+})();
+
+// ─────────────────────────────────────────────
+// §3  ATTENTION FLOW
+// ─────────────────────────────────────────────
+(function initFlow(){
+  const g=C('cFlow'), W=640, H=360;
+
+  const NODES=[
+    {id:'x',    lbl:'Input x',    sub:'(B,T,n_embd)', x:320, y:30,  col:PAL.muted},
+    {id:'qp',   lbl:'q_proj',     sub:'',             x:140, y:100, col:PAL.accent},
+    {id:'kp',   lbl:'k_proj',     sub:'',             x:320, y:100, col:PAL.green},
+    {id:'vp',   lbl:'v_proj',     sub:'',             x:500, y:100, col:PAL.orange},
+    {id:'Q',    lbl:'Q',          sub:'B,T,nH,D',     x:140, y:175, col:PAL.accent},
+    {id:'K',    lbl:'K',          sub:'B,T,nKV,D',    x:320, y:175, col:PAL.green},
+    {id:'V',    lbl:'V',          sub:'B,T,nKV,D',    x:500, y:175, col:PAL.orange},
+    {id:'rope', lbl:'RoPE',       sub:'Q and K',      x:230, y:248, col:PAL.purple},
+    {id:'fa',   lbl:'flash_attn', sub:'Q,K,V → y',   x:370, y:290, col:PAL.purple},
+    {id:'rs',   lbl:'reshape',    sub:'B,T,n_embd',   x:520, y:330, col:PAL.muted},
+    {id:'op',   lbl:'o_proj',     sub:'',             x:150, y:335, col:PAL.accent},
+    {id:'out',  lbl:'+ residual', sub:'output',       x:30,  y:335, col:PAL.green},
+  ];
+  const EDGES=[
+    ['x','qp'],['x','kp'],['x','vp'],
+    ['qp','Q'],['kp','K'],['vp','V'],
+    ['Q','rope'],['K','rope'],
+    ['rope','fa'],['V','fa'],
+    ['fa','rs'],['rs','op'],['op','out'],
+  ];
+  const TIPS={
+    x:'Input token embeddings — shape (B, T, n_embd)',
+    qp:'Projects x → Q heads. Weight shape: (n_embd, n_head·head_dim)',
+    kp:'Projects x → K heads. Weight shape: (n_embd, n_kv_head·head_dim)',
+    vp:'Projects x → V heads. Weight shape: (n_embd, n_kv_head·head_dim)',
+    Q:'Query vectors — one per attention head. Shape: (B,T,n_head,head_dim)',
+    K:'Key vectors — shared across groups. Shape: (B,T,n_kv_head,head_dim)',
+    V:'Value vectors — same KV heads as K. Shape: (B,T,n_kv_head,head_dim)',
+    rope:'Apply rotary embeddings to Q and K. V is not rotated.',
+    fa:'Flash Attention 3 (Hopper) or SDPA fallback. Outputs y: (B,T,n_head,head_dim)',
+    rs:'Concatenate heads → (B,T,n_head·head_dim) = (B,T,n_embd)',
+    op:'Projects attention output back to n_embd. Initialized to zero.',
+    out:'Caller adds output to residual stream: x = x + o_proj(y)',
+  };
+
+  function nodeBox(n){
+    const tw=72; const bw=Math.max(tw,n.sub?90:72); const bh=n.sub?34:26;
+    return {x:n.x-bw/2, y:n.y-bh/2, w:bw, h:bh};
+  }
+
+  function draw(){
+    g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+    // edges
+    EDGES.forEach(([a,b])=>{
+      const na=NODES.find(n=>n.id===a), nb=NODES.find(n=>n.id===b);
+      g.beginPath();
+      g.moveTo(na.x, na.y+17);
+      g.bezierCurveTo(na.x,na.y+45,nb.x,nb.y-45,nb.x,nb.y-17);
+      g.strokeStyle='#30363d'; g.lineWidth=1.5; g.stroke();
+      // arrowhead
+      const ang=Math.atan2(nb.y-(nb.y-45),0);
+      const ax=nb.x, ay=nb.y-17;
+      g.beginPath(); g.moveTo(ax,ay);
+      g.lineTo(ax-5,ay-8); g.lineTo(ax+5,ay-8); g.closePath();
+      g.fillStyle='#30363d'; g.fill();
+    });
+
+    // nodes
+    NODES.forEach(n=>{
+      const {x,y,w,h}=nodeBox(n);
+      g.fillStyle=n.col+'1e'; g.strokeStyle=n.col; g.lineWidth=1.5;
+      g.beginPath(); g.roundRect(x,y,w,h,4); g.fill(); g.stroke();
+      g.fillStyle=n.col; g.font='bold 11px monospace'; g.textAlign='center';
+      g.fillText(n.lbl,n.x,n.y+(n.sub?-1:5));
+      if(n.sub){ g.fillStyle=PAL.muted; g.font='8px monospace'; g.fillText(n.sub,n.x,n.y+12); }
+    });
+    g.textAlign='left';
+  }
+  draw();
+
+  // hover tooltip
+  $('cFlow').addEventListener('mousemove',e=>{
+    const rect=$('cFlow').getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(640/rect.width);
+    const my=(e.clientY-rect.top)*(360/rect.height);
+    let hit=null;
+    NODES.forEach(n=>{ const b=nodeBox(n); if(mx>=b.x&&mx<=b.x+b.w&&my>=b.y&&my<=b.y+b.h) hit=n; });
+    $('flowTip').textContent = hit ? TIPS[hit.id] : 'Hover over a node to see its role.';
+    $('flowTip').style.color = hit ? hit.col : PAL.muted;
+  });
+})();
+
+// ─────────────────────────────────────────────
+// §4  VALUE EMBEDDING GATE
+// ─────────────────────────────────────────────
+function drawVE(){
+  const g=C('cVE'), W=580, H=180;
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const w=parseFloat($('sGate').value);
+  const sig=1/(1+Math.exp(-w));
+  const gate=3*sig;       // 0..3
+  const vFrac=clamp(1-gate/3,0,1);
+  const veFrac=1-vFrac;
+
+  const barX=20, barY=65, barW=540, barH=45;
+
+  // v_proj bar
+  if(vFrac>0.01){
+    g.fillStyle=PAL.accent+'33'; g.strokeStyle=PAL.accent; g.lineWidth=1.5;
+    g.beginPath(); g.roundRect(barX,barY,barW*vFrac,barH,veFrac<0.01?[5,5,5,5]:[5,0,0,5]); g.fill(); g.stroke();
+    if(vFrac>0.12){
+      g.fillStyle=PAL.accent; g.font='11px monospace'; g.textAlign='center';
+      g.fillText('v_proj — context',barX+barW*vFrac/2,barY+barH/2+4);
+    }
+  }
+  // ve bar
+  if(veFrac>0.01){
+    const sx=barX+barW*vFrac;
+    g.fillStyle=PAL.orange+'33'; g.strokeStyle=PAL.orange; g.lineWidth=1.5;
+    g.beginPath(); g.roundRect(sx,barY,barW*veFrac,barH,vFrac<0.01?[5,5,5,5]:[0,5,5,0]); g.fill(); g.stroke();
+    if(veFrac>0.12){
+      g.fillStyle=PAL.orange; g.font='11px monospace'; g.textAlign='center';
+      g.fillText('ve — token identity',sx+barW*veFrac/2,barY+barH/2+4);
+    }
+  }
+
+  g.textAlign='left';
+  g.fillStyle=PAL.text; g.font='12px monospace';
+  g.fillText(`gate = 3 × sigmoid(${w.toFixed(2)}) = ${gate.toFixed(3)}`,20,45);
+
+  const pct=(veFrac*100).toFixed(0);
+  $('vGate').textContent=`w=${w.toFixed(2)} · gate=${gate.toFixed(2)} · ${pct}% identity`;
+
+  g.fillStyle=PAL.muted; g.font='10px monospace';
+  g.fillText('gate=0 → 50/50 blend    gate=3 → ve fully overrides v_proj',20,H-15);
+}
+$('sGate').addEventListener('input',drawVE);
+drawVE();
+
+// ─────────────────────────────────────────────
+// §6  BACKOUT SIGNAL VIZ
+// ─────────────────────────────────────────────
+(function drawBackout(){
+  const g=C('cBackout'), W=620, H=190;
+  const PL=10,PR=10,PT=18,PB=10, PW=W-PL-PR, PH=H-PT-PB;
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const N=300;
+  const xs=Array.from({length:N},(_,i)=>PL+i/(N-1)*PW);
+
+  const low =xs.map((_,i)=>Math.sin(i/N*Math.PI*4)*0.55+Math.sin(i/N*Math.PI*2)*0.25);
+  const high=xs.map((_,i)=>Math.sin(i/N*Math.PI*20)*0.28+Math.sin(i/N*Math.PI*14)*0.18);
+  const mix =low.map((l,i)=>l+high[i]);
+  const out =mix.map((m,i)=>m-0.2*low[i]);
+
+  const rowH=PH/3;
+  const signals=[
+    {vals:mix,  color:PAL.muted,  lbl:'x_final   (low + high freq mixed)',     row:0},
+    {vals:low,  color:PAL.red,    lbl:'−0.2 × x_mid   (low-freq noise)',        row:1},
+    {vals:out,  color:PAL.green,  lbl:'= result   (cleaner high-level signal)', row:2},
+  ];
+
+  signals.forEach(({vals,color,lbl,row})=>{
+    const yBase=PT+row*rowH+rowH*0.6;
+    const sc=rowH*0.38;
+    g.fillStyle=color; g.font='9px monospace';
+    g.fillText(lbl,PL+3,PT+row*rowH+12);
+
+    g.beginPath();
+    vals.forEach((v,i)=>{ const x=xs[i],y=yBase-v*sc; i===0?g.moveTo(x,y):g.lineTo(x,y); });
+    g.strokeStyle=color; g.lineWidth=1.8; g.stroke();
+
+    // separator
+    if(row<2){
+      g.beginPath(); g.moveTo(PL,PT+(row+1)*rowH); g.lineTo(PL+PW,PT+(row+1)*rowH);
+      g.strokeStyle='#21262d'; g.lineWidth=1; g.stroke();
+    }
+  });
+})();
+
+// ─────────────────────────────────────────────
+// §7  INIT DISTRIBUTION
+// ─────────────────────────────────────────────
+(function drawInit(){
+  const g=C('cInit'), W=620, H=210;
+  const PL=12,PR=12,PT=28,PB=28, PW=W-PL-PR, PH=H-PT-PB;
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const sigma=1, a=Math.sqrt(3)*sigma;
+  const xMin=-4.2, xMax=4.2, N=400;
+  const toX=v=>PL+(v-xMin)/(xMax-xMin)*PW;
+  const toY=v=>PT+PH-(v/0.48)*PH;
+
+  // x-axis
+  g.beginPath(); g.moveTo(PL,toY(0)); g.lineTo(PL+PW,toY(0));
+  g.strokeStyle=PAL.border; g.lineWidth=1; g.stroke();
+  [-4,-3,-2,-1,0,1,2,3,4].forEach(v=>{
+    g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='center';
+    g.fillText(v+'σ',toX(v*sigma),toY(0)+13);
+  });
+
+  // Normal PDF
+  g.beginPath();
+  for(let i=0;i<=N;i++){
+    const x=xMin+(i/N)*(xMax-xMin);
+    const y=(1/(sigma*Math.sqrt(TAU)))*Math.exp(-0.5*(x/sigma)**2);
+    i===0?g.moveTo(toX(x),toY(y)):g.lineTo(toX(x),toY(y));
+  }
+  g.strokeStyle=PAL.red; g.lineWidth=2; g.stroke();
+
+  // Shade danger tails (|x|>2.5σ)
+  [[xMin,-2.5],[2.5,xMax]].forEach(([lo,hi])=>{
+    g.beginPath();
+    g.moveTo(toX(lo),toY(0));
+    for(let i=0;i<=60;i++){
+      const x=lo+(hi-lo)*i/60;
+      const y=(1/(sigma*Math.sqrt(TAU)))*Math.exp(-0.5*(x/sigma)**2);
+      g.lineTo(toX(x),toY(y));
+    }
+    g.lineTo(toX(hi),toY(0)); g.closePath();
+    g.fillStyle=PAL.red+'44'; g.fill();
+  });
+
+  // Uniform PDF
+  const uh=1/(2*a);
+  g.fillStyle=PAL.accent+'1e'; g.strokeStyle=PAL.accent; g.lineWidth=2.5;
+  g.beginPath();
+  g.moveTo(toX(-a),toY(0)); g.lineTo(toX(-a),toY(uh));
+  g.lineTo(toX(a),toY(uh)); g.lineTo(toX(a),toY(0));
+  g.stroke();
+  g.fillRect(toX(-a),toY(uh),toX(a)-toX(-a),toY(0)-toY(uh));
+
+  // bound markers
+  g.setLineDash([4,3]); g.strokeStyle=PAL.accent+'77'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(toX(-a),toY(uh)-4); g.lineTo(toX(-a),toY(0)+1); g.stroke();
+  g.beginPath(); g.moveTo(toX(a), toY(uh)-4); g.lineTo(toX(a), toY(0)+1); g.stroke();
+  g.setLineDash([]);
+
+  // labels
+  g.fillStyle=PAL.red; g.font='10px monospace'; g.textAlign='left';
+  g.fillText('Normal(0,σ²) — tails can hit 3σ,4σ (bfloat16 danger!)',PL+4,PT+14);
+  g.fillStyle=PAL.accent;
+  g.fillText(`Uniform(−√3σ, +√3σ) — same std, zero tails`,toX(-a)+5,toY(uh)-8);
+  g.fillStyle=PAL.red+'cc'; g.font='8px monospace';
+  g.fillText('danger',toX(3.0),toY(0.01));
+  g.textAlign='left';
+})();
+
+// ─────────────────────────────────────────────
+// §8  RESIDUAL LAMBDA SCHEDULE
+// ─────────────────────────────────────────────
+function drawResid(){
+  const g=C('cResid'), W=620, H=200;
+  const PL=46,PR=20,PT=24,PB=32, PW=W-PL-PR, PH=H-PT-PB;
+  const nL=parseInt($('sLayers').value);
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const yMin=1.03, yMax=1.17;
+  const toX=i=>PL+i/(nL-1)*PW;
+  const toY=v=>PT+PH-(v-yMin)/(yMax-yMin)*PH;
+
+  // gridlines
+  [1.05,1.10,1.15].forEach(v=>{
+    const y=toY(v);
+    g.setLineDash([4,3]);
+    g.beginPath(); g.moveTo(PL,y); g.lineTo(PL+PW,y);
+    g.strokeStyle='#21262d'; g.lineWidth=1; g.stroke();
+    g.setLineDash([]);
+    g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='right';
+    g.fillText(v.toFixed(2),PL-3,y+3);
+  });
+
+  // λ=1.0 reference
+  g.setLineDash([3,4]); g.strokeStyle=PAL.red+'88'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(PL,toY(1.0)); g.lineTo(PL+PW,toY(1.0)); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle=PAL.red+'99'; g.font='9px monospace'; g.textAlign='left';
+  g.fillText('λ=1.0 (standard residual — no amplification)',PL+5,toY(1.0)-4);
+
+  // gradient fill under schedule
+  const grad=g.createLinearGradient(PL,PT,PL+PW,PT);
+  grad.addColorStop(0,PAL.accent+'44'); grad.addColorStop(1,PAL.purple+'44');
+  g.beginPath();
+  for(let i=0;i<nL;i++){
+    const lam=1.15-0.10*i/(nL-1);
+    i===0?g.moveTo(toX(i),toY(lam)):g.lineTo(toX(i),toY(lam));
+  }
+  g.lineTo(toX(nL-1),toY(1.0)); g.lineTo(PL,toY(1.0)); g.closePath();
+  g.fillStyle=grad; g.fill();
+
+  // main line
+  g.beginPath();
+  for(let i=0;i<nL;i++){
+    const lam=1.15-0.10*i/(nL-1);
+    i===0?g.moveTo(toX(i),toY(lam)):g.lineTo(toX(i),toY(lam));
+  }
+  g.strokeStyle=PAL.accent; g.lineWidth=2.5; g.stroke();
+
+  // dots
+  const step=Math.max(1,Math.floor(nL/10));
+  for(let i=0;i<nL;i+=step){
+    const lam=1.15-0.10*i/(nL-1);
+    g.beginPath(); g.arc(toX(i),toY(lam),3.5,0,TAU);
+    g.fillStyle=PAL.accent; g.fill();
+  }
+
+  // end labels
+  const lam0=1.15, lamN=1.05;
+  g.fillStyle=PAL.accent; g.font='bold 9px monospace'; g.textAlign='left';
+  g.fillText(`λ=${lam0}  (layer 0)`,toX(0)+6,toY(lam0)-5);
+  g.textAlign='right';
+  g.fillText(`λ=${lamN.toFixed(2)}  (layer ${nL-1})`,toX(nL-1)-5,toY(lamN)-5);
+
+  // axis
+  g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='center';
+  g.fillText('Layer index',PL+PW/2,H-4);
+  g.textAlign='left';
+  $('vLayers').textContent=`${nL} layers`;
+}
+$('sLayers').addEventListener('input',drawResid);
+drawResid();
+
+// ─────────────────────────────────────────────
+// SIDEBAR ACTIVE TRACKING
+// ─────────────────────────────────────────────
+const secs=document.querySelectorAll('.section');
+const navAs=document.querySelectorAll('#sidebar a');
+new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting) navAs.forEach(a=>
+      a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));
+  });
+},{threshold:0.25}).observe && secs.forEach(s=>
+  new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting) navAs.forEach(a=>
+        a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));
+    });
+  },{threshold:0.25}).observe(s));
+</script>
+</body>
+</html>
