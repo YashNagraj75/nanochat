@@ -1,4 +1,4 @@
-# nanochat Architecture Notes
+pa# nanochat Architecture Notes
 
 Answers to questions that came up while building the GPT from scratch.
 
@@ -34,7 +34,7 @@ sin = torch.sin(freqs).repeat_interleave(2, dim=-1)
 # reshape to (1, T, 1, D) for broadcasting over (B, T, H, D)
 ```
 
----
+---A
 
 ## 2. Why `head_dim = n_embd // n_head`, not `n_embd // n_kv_head`
 
@@ -193,7 +193,43 @@ resid_lambdas[i] = 1.15 - (0.10 * i / (n_layer - 1))
 
 ---
 
-## 9. Attention FLOP Count — why `12 * n_embd * q * effective_seq_len`
+## 9. Total Training FLOPs — `6 * params + attn_flops`
+
+```python
+num_flops_per_token = 6 * (nparams - nparams_exclude) + attn_flops
+```
+
+### Where the 6 comes from
+
+For any linear layer `y = x @ W` (W has `k×n` parameters), training requires three passes:
+
+```
+Forward:   y     = x  @ W       → 2 × params   (compute output)
+Backward:  dL/dx = dL/dy @ Wᵀ  → 2 × params   (grad w.r.t. input)
+Backward:  dL/dW = xᵀ @ dL/dy  → 2 × params   (grad w.r.t. weights)
+──────────────────────────────────────────────
+Total                            = 6 × params
+```
+
+Each backward pass is a transposed matmul of the same shape — same FLOP count. **3 passes × 2 FLOPs/param = 6.**
+
+### Why attention is added separately
+
+`6 × params` only works for parameter-bound compute. Attention's `Q@Kᵀ` and `scores@V` have **no parameters** — they're matmuls between activations, scaling with `T²` not param count. So they're counted separately via the `12 × n_embd × T_eff` formula (see §10).
+
+### Why `nparams_exclude`?
+
+The embedding table `wte` is a lookup — O(1) index operation, not a matmul. No multiply-add over parameters occurs. It's subtracted out so the 6× rule isn't applied to params that don't do matmul work.
+
+| Component | FLOPs per token |
+|---|---|
+| Linear layers (forward + backward) | `6 × num_params` |
+| Attention matmuls (activation × activation) | `12 × n_embd × T_eff` |
+| Embedding lookup | `0` (excluded via nparams_exclude) |
+
+---
+
+## 10. Attention FLOP Count (Q@Kᵀ) — why `12 * n_embd * q * effective_seq_len`
 
 The `12` is the product of three independent factors:
 

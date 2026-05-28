@@ -103,7 +103,8 @@ ul{margin:.5rem 0 .5rem 1.5rem;line-height:2}
     <a href="#backout"><span class="num">06</span>Backout Lambda</a>
     <a href="#init"><span class="num">07</span>Weight Init</a>
     <a href="#resid"><span class="num">08</span>Residual Lambdas</a>
-    <a href="#flops"><span class="num">09</span>Attention FLOPs</a>
+    <a href="#paramflops"><span class="num">09</span>Total Training FLOPs</a>
+    <a href="#flops"><span class="num">10</span>Attention FLOPs</a>
   </nav>
 </aside>
 
@@ -401,10 +402,66 @@ mlp.c_proj  → zeros</code></pre>
 </section>
 
 <!-- ══════════════════════════════════════
-     §9  ATTENTION FLOPS
+     §9  TOTAL TRAINING FLOPS
+══════════════════════════════════════ -->
+<section class="section" id="paramflops">
+  <div class="section-header"><span class="snum">09</span><h2>Total Training FLOPs — 6 × params + attn_flops</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    Every linear layer costs 6 FLOPs per parameter per token during training (2 forward + 2 backward dA + 2 backward dW). Attention matmuls are added separately because they have no parameters — they scale with T², not param count.
+  </div>
+
+  <pre><code>num_flops_per_token = <span class="nb">6</span> * (nparams - nparams_exclude) + attn_flops</code></pre>
+
+  <p>For any linear layer <code>y = x @ W</code>, training needs three passes of equal cost:</p>
+
+  <table>
+    <tr><th>Pass</th><th>Operation</th><th>FLOPs</th></tr>
+    <tr><td>Forward</td><td><code>y = x @ W</code></td><td>2 × params</td></tr>
+    <tr><td>Backward (input grad)</td><td><code>dL/dx = dL/dy @ Wᵀ</code></td><td>2 × params</td></tr>
+    <tr><td>Backward (weight grad)</td><td><code>dL/dW = xᵀ @ dL/dy</code></td><td>2 × params</td></tr>
+    <tr><td><b>Total</b></td><td></td><td><b>6 × params</b></td></tr>
+  </table>
+
+  <div class="viz">
+    <div class="viz-title">FLOPs breakdown — drag to explore param count and sequence length</div>
+    <canvas id="cParamFlops" width="620" height="210"></canvas>
+    <div class="controls">
+      <div class="cg">
+        <label>Model params (millions)</label>
+        <input type="range" id="sPMil" min="50" max="1000" value="124" step="10">
+        <span class="cv" id="vPMil">124M params</span>
+      </div>
+      <div class="cg">
+        <label>Excl. embed params (millions)</label>
+        <input type="range" id="sPExcl" min="0" max="200" value="25" step="5">
+        <span class="cv" id="vPExcl">25M excluded</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="callout insight"><b>Why 2 FLOPs per param per pass</b>
+      Each weight participates in exactly one multiply-add per output element. One multiply + one add = 2 FLOPs. Backward passes are transposed matmuls of the same shape — same count.
+    </div>
+    <div class="callout warn"><b>Why embeddings are excluded</b>
+      A token lookup in <code>wte</code> is an index operation — O(1), no multiply-add. Applying 6× to these params would overcount. The lm_head (weight-tied to wte) <em>does</em> do a matmul and is typically included.
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Component</th><th>FLOPs per token</th></tr>
+    <tr><td>Linear layers (all proj, MLP)</td><td>6 × num_params</td></tr>
+    <tr><td>Attention matmuls (Q@Kᵀ, scores@V)</td><td>12 × n_embd × T_eff  (see §10)</td></tr>
+    <tr><td>Embedding lookup (wte)</td><td>0 — excluded via nparams_exclude</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════
+     §10  ATTENTION FLOPS
 ══════════════════════════════════════ -->
 <section class="section" id="flops">
-  <div class="section-header"><span class="snum">09</span><h2>Attention FLOP Count — 12 × n_embd × q × seq_len</h2></div>
+  <div class="section-header"><span class="snum">10</span><h2>Attention FLOP Count — 12 × n_embd × q × seq_len</h2></div>
 
   <div class="tldr"><b>TL;DR</b>
     The 12 = 2 (multiply-add) × 2 (two matmuls: Q@K<sup>T</sup> and scores@V) × 3 (training forward + 2 backward passes). Summed over all heads gives <code>12 × n_embd × T_q × T_k</code>.
@@ -992,7 +1049,61 @@ $('sLayers').addEventListener('input',drawResid);
 drawResid();
 
 // ─────────────────────────────────────────────
-// §9  ATTENTION FLOPS
+// §9  TOTAL TRAINING FLOPS
+// ─────────────────────────────────────────────
+function drawParamFlops(){
+  const g=C('cParamFlops'), W=620, H=210;
+  const PL=16,PR=16,PT=28,PB=20, PW=W-PL-PR, PH=H-PT-PB;
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const pM   = parseInt($('sPMil').value)*1e6;
+  const exclM= parseInt($('sPExcl').value)*1e6;
+  const net  = pM - exclM;
+
+  const passes = [
+    {lbl:'Forward  y = x @ W',         flops: 2*net, col: PAL.accent},
+    {lbl:'Backward  dL/dx = dL/dy @ Wᵀ', flops: 2*net, col: PAL.green},
+    {lbl:'Backward  dL/dW = xᵀ @ dL/dy', flops: 2*net, col: PAL.orange},
+  ];
+  const total = passes.reduce((s,p)=>s+p.flops,0);
+  const maxV  = total * 1.12;
+  const barW  = (PW - passes.length*10) / passes.length;
+
+  // stacked-like layout: three equal bars side by side
+  passes.forEach((p,i)=>{
+    const bh = (p.flops/maxV)*PH;
+    const x  = PL + i*(barW+10);
+    const y  = PT+PH-bh;
+    g.fillStyle=p.col+'28'; g.strokeStyle=p.col; g.lineWidth=1.5;
+    g.beginPath(); g.roundRect(x,y,barW,bh,4); g.fill(); g.stroke();
+    // value label inside bar
+    const giga=(p.flops/1e9).toFixed(1);
+    g.fillStyle=p.col; g.font='bold 11px monospace'; g.textAlign='center';
+    g.fillText(giga+'G', x+barW/2, y+18);
+    // pass label below
+    g.fillStyle=PAL.muted; g.font='8px monospace';
+    g.fillText(p.lbl, x+barW/2, PT+PH+14);
+  });
+
+  // total annotation
+  const totStr = total>=1e12 ? (total/1e12).toFixed(2)+'T' : (total/1e9).toFixed(1)+'G';
+  g.fillStyle=PAL.orange; g.font='bold 11px monospace'; g.textAlign='right';
+  g.fillText(`Total = 6 × ${(net/1e6).toFixed(0)}M params = ${totStr} FLOPs/token`, PL+PW, PT-8);
+
+  // bracket showing "× 3 = 6×"
+  const bx = PL + passes.length*(barW+10) - 10 + 18;
+  g.fillStyle=PAL.purple; g.font='10px monospace'; g.textAlign='left';
+  g.fillText('} × 3 = 6× params', bx, PT+PH/2+4);
+
+  g.textAlign='left';
+  $('vPMil').textContent=`${(pM/1e6).toFixed(0)}M params`;
+  $('vPExcl').textContent=`${(exclM/1e6).toFixed(0)}M excluded`;
+}
+['sPMil','sPExcl'].forEach(id=>$(id).addEventListener('input',drawParamFlops));
+drawParamFlops();
+
+// ─────────────────────────────────────────────
+// §10  ATTENTION FLOPS
 // ─────────────────────────────────────────────
 function drawFlops(){
   const g=C('cFlops'), W=620, H=220;

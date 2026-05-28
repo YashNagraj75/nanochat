@@ -414,3 +414,16 @@ class GPT(nn.Module):
             self.config.n_embed // self.config.n_head,
             self.config.sequence_len,
         )
+
+        # Calcluate the attn flops
+        attn_flops = 0
+        for window_size in self.window_sizes:
+            window = window_size[0]
+            effective_seq = t if window < 0 else min(t, window)
+            attn_flops += 12 * h * q * effective_seq
+
+        num_flops_per_token = (
+            6 * (nparams - nparams_exclude) + attn_flops
+        )  # The 6 here is for forward + backward for the linear layers
+
+        return num_flops_per_token
