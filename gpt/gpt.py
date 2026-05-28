@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from dataclasses import dataclass
 from functools import partial
 
+from torch.nn.modules import transformer
+
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -340,3 +342,75 @@ class GPT(nn.Module):
         )
 
         # Generate the timesteps
+        t = torch.arange(seq_len, dtype=torch.float32, device=device)
+
+        # Now get the outer product of the timesteps and the inv_freq to calculate the rotational frequencies for every timestep
+        freq = torch.outer(t, inv_freq)
+        cos, sin = freq.cos(), freq.sin()
+        cos, sin = cos.to(COMPUTE_DTYPE), sin.to(COMPUTE_DTYPE)
+        cos, sin = cos[None, :, None, :], sin[None, :, None, :]
+        return cos, sin
+
+    def _compute_window_sizes(self, config):
+        """
+        Compute per-layer window sizes for sliding window attention.
+
+        Returns list of (left, right) tuples for FA3's window_size parameter:
+        - left: how many tokens before current position to attend to (-1 = unlimited)
+        - right: how many tokens after current position to attend to (0 for causal)
+
+        Pattern string is tiled across layers. Final layer always gets L (full context).
+        Characters: L=long (full context), S=short (quarter context)
+        """
+        pattern = config.window_pattern.upper()
+        assert all(c in "SL" for c in pattern), (
+            f"Invalid window_pattern: {pattern}. Use only S and L."
+        )
+        # Map characters to window sizes
+        long_window = config.sequence_len
+        short_window = (
+            -(-long_window // 4 // 128) * 128
+        )  # ceil to FA3 tile size (2048 -> 768)
+        char_to_window = {
+            "L": (long_window, 0),
+            "S": (short_window, 0),
+        }
+        # Tile pattern across layers
+        window_sizes = []
+        for layer_idx in range(config.n_layer):
+            char = pattern[layer_idx % len(pattern)]
+            window_sizes.append(char_to_window[char])
+        # Final layer always gets full context
+        window_sizes[-1] = (long_window, 0)
+        return window_sizes
+
+    def estimate_flops(self):
+        """
+        Return the estimated FLOPs per token for the model (forward + backward).
+        Each matmul weight parameter contributes 2 FLOPs (multiply *, accumulate +) in forward, and 2X that in backward => 2+4=6.
+        Cleanest explanation of this: https://medium.com/@dzmitrybahdanau/the-flops-calculus-of-language-model-training-3b19c1f025e4
+        On top of that, 12 * h * q * effective_seq_len accounts for key @ query matmul flops inside attention.
+        With sliding windows, effective_seq_len varies per layer (capped by window size).
+        Ref: https://arxiv.org/abs/2204.02311 (PaLM paper).
+        This is ~1% off from the exact formulas of Chinchilla paper, the difference is:
+        - Chinchilla counts the embedding layer as flops (? weird, it's just a lookup => we ignore)
+        - Chinchilla counts exp/sum/divide in attention softmax as flops (a little sus and very tiny => we ignore)
+        """
+        nparams = sum(p.numel for p in self.parameters)  # Total number of params
+        # Exclued the non-matmul params like embeddings
+        value_embed_numel = sum(ve.weight.numel() for ve in self.value_embeds.values())
+        nparams_exclude = (
+            self.transformer.wte.weight.numel()
+            + value_embed_numel
+            + self.resid_lambdas.numel()
+            + self.x0_lambdas.numel()
+            + self.smear_gate.weight.numel()
+            + self.smear_lambda.numel()
+            + self.backout_lambda.numel(),
+        )
+
+        h, q, t = (
+            self.config.n_head,
+            self.config.n_embed // self.config.n_head,
+            self.config.sequence_len,
+        )

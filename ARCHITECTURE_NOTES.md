@@ -190,3 +190,50 @@ resid_lambdas[i] = 1.15 - (0.10 * i / (n_layer - 1))
 - Later layers refine rich representations (less amplification needed)
 
 **Why these specific numbers:** The *shape* (linear decay, slightly above 1.0) is theory-motivated. The exact values (1.15, 0.10 range) are empirically tuned — tried values in this ballpark and these gave the best training loss.
+
+---
+
+## 9. Attention FLOP Count — why `12 * n_embd * q * effective_seq_len`
+
+The `12` is the product of three independent factors:
+
+### Factor 1: Basic matmul cost = 2
+Any matrix multiply `(m, k) @ (k, n)` costs `2 * m * k * n` FLOPs.
+The `2` is one multiply + one add per output element.
+
+For `Q @ K^T` on one head:
+```
+Q: (T_q, head_dim)  @  K^T: (head_dim, T_k)
+FLOPs = 2 * T_q * head_dim * T_k
+```
+
+### Factor 2: Two matmuls in attention = ×2
+Both have the same shape cost:
+```
+1. Q @ K^T     → scores:  (T_q, T_k)
+2. scores @ V  → output:  (T_q, head_dim)
+```
+Forward-only total = `4 * head_dim * T_q * T_k` per head.
+
+### Factor 3: Training = ×3
+For each matmul `C = A @ B`, the backward pass needs:
+```
+Forward:    C  = A @ B        (compute output)
+Backward:   dA = dC @ B^T    (grad w.r.t. A)
+Backward:   dB = A^T @ dC    (grad w.r.t. B)
+```
+Three passes, each the same cost → **3× the forward**.
+
+### Putting it together
+```
+2  (multiply-add)
+× 2  (two matmuls: Q@K^T and scores@V)
+× 3  (training: forward + 2 backward passes)
+= 12
+
+→ 12 * head_dim * T_q * T_k  per head
+→ 12 * n_embd  * T_q * T_k  all heads  (n_head × head_dim = n_embd)
+```
+
+### Why "effective" seq len?
+In causal attention, token `t` attends only to positions `0..t`. On average each query sees `T/2` keys, so `effective_seq_len ≈ T/2` for a full causal sequence.

@@ -103,6 +103,7 @@ ul{margin:.5rem 0 .5rem 1.5rem;line-height:2}
     <a href="#backout"><span class="num">06</span>Backout Lambda</a>
     <a href="#init"><span class="num">07</span>Weight Init</a>
     <a href="#resid"><span class="num">08</span>Residual Lambdas</a>
+    <a href="#flops"><span class="num">09</span>Attention FLOPs</a>
   </nav>
 </aside>
 
@@ -397,6 +398,71 @@ mlp.c_proj  → zeros</code></pre>
       Early layers transform raw embeddings (low information → need more boost). Late layers refine rich representations (less boost needed). The exact values 1.15/0.10 are empirically tuned.
     </div>
   </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     §9  ATTENTION FLOPS
+══════════════════════════════════════ -->
+<section class="section" id="flops">
+  <div class="section-header"><span class="snum">09</span><h2>Attention FLOP Count — 12 × n_embd × q × seq_len</h2></div>
+
+  <div class="tldr"><b>TL;DR</b>
+    The 12 = 2 (multiply-add) × 2 (two matmuls: Q@K<sup>T</sup> and scores@V) × 3 (training forward + 2 backward passes). Summed over all heads gives <code>12 × n_embd × T_q × T_k</code>.
+  </div>
+
+  <p>Every attention layer has two matrix multiplications. Each costs FLOPs during training's forward and backward passes:</p>
+
+  <table>
+    <tr><th>Factor</th><th>Value</th><th>Why</th></tr>
+    <tr><td>Multiply-add per element</td><td>× 2</td><td>One multiply + one add to compute each output element</td></tr>
+    <tr><td>Matmuls in attention</td><td>× 2</td><td>Q@K<sup>T</sup> (scores) and scores@V (output) — same shape cost</td></tr>
+    <tr><td>Training passes</td><td>× 3</td><td>Forward + dA = dC@B<sup>T</sup> + dB = A<sup>T</sup>@dC</td></tr>
+    <tr><td><b>Total</b></td><td><b>12</b></td><td>2 × 2 × 3</td></tr>
+  </table>
+
+  <div class="math">
+    FLOPs = 12 × head_dim × T_q × T_k &nbsp; (per head)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 12 × n_embd &nbsp;× T_q × T_k &nbsp; (all heads, since n_head × head_dim = n_embd)
+  </div>
+
+  <div class="viz">
+    <div class="viz-title">FLOP breakdown — drag to see how sequence length and n_embd affect compute</div>
+    <canvas id="cFlops" width="620" height="220"></canvas>
+    <div class="controls">
+      <div class="cg">
+        <label>Sequence length T</label>
+        <input type="range" id="sSeqLen" min="128" max="4096" value="2048" step="128">
+        <span class="cv" id="vSeqLen">T = 2048</span>
+      </div>
+      <div class="cg">
+        <label>n_embd</label>
+        <input type="range" id="sNEmbd" min="256" max="4096" value="768" step="256">
+        <span class="cv" id="vNEmbd">n_embd = 768</span>
+      </div>
+      <div class="cg">
+        <label>n_layer</label>
+        <input type="range" id="sNLayer" min="4" max="48" value="12" step="4">
+        <span class="cv" id="vNLayer">n_layer = 12</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="callout insight"><b>Quadratic in sequence length</b>
+      T_q × T_k = T² (causal average: T×T/2). Doubling the context quadruples attention FLOPs — the core motivation for sliding window attention and FlashAttention's IO-awareness.
+    </div>
+    <div class="callout warn"><b>"Effective" seq len in causal attention</b>
+      Token t attends to positions 0..t only. Average keys seen = T/2, so effective_seq_len ≈ T/2 for a full causal sequence.
+    </div>
+  </div>
+
+  <p>The backward pass breakdown for one matmul <code>C = A @ B</code>:</p>
+  <pre><code><span class="cm"># Forward</span>
+C  = A @ B          <span class="cm"># compute scores / output</span>
+<span class="cm"># Backward</span>
+dA = dC @ B.T       <span class="cm"># gradient w.r.t. Q (or scores)</span>
+dB = A.T @ dC       <span class="cm"># gradient w.r.t. K (or V)</span>
+<span class="cm"># → 3 passes × same shape = 3× forward cost</span></code></pre>
 </section>
 
 </main><!-- /#main -->
@@ -924,6 +990,67 @@ function drawResid(){
 }
 $('sLayers').addEventListener('input',drawResid);
 drawResid();
+
+// ─────────────────────────────────────────────
+// §9  ATTENTION FLOPS
+// ─────────────────────────────────────────────
+function drawFlops(){
+  const g=C('cFlops'), W=620, H=220;
+  const PL=60,PR=16,PT=24,PB=36, PW=W-PL-PR, PH=H-PT-PB;
+  g.clearRect(0,0,W,H); g.fillStyle=PAL.bg; g.fillRect(0,0,W,H);
+
+  const T=parseInt($('sSeqLen').value);
+  const nE=parseInt($('sNEmbd').value);
+  const nLay=parseInt($('sNLayer').value);
+
+  // per-layer attn FLOPs (causal: effective T_k = T/2)
+  const attnPerLayer = 12 * nE * T * (T/2);
+  // total over all layers
+  const total = attnPerLayer * nLay;
+
+  // show bar chart: factor breakdown (each factor's contribution)
+  // bars: [matmul base, ×2 for two matmuls, ×3 for training]
+  const factors = [
+    {lbl:'Q@Kᵀ fwd',  val: 2*nE*T*(T/2), col:PAL.accent},
+    {lbl:'scores@V fwd', val: 2*nE*T*(T/2), col:PAL.green},
+    {lbl:'Q@Kᵀ bwd×2',  val: 2*2*nE*T*(T/2), col:PAL.accent+'88'},
+    {lbl:'scores@V bwd×2',val:2*2*nE*T*(T/2), col:PAL.green+'88'},
+  ];
+  const maxVal = factors.reduce((m,f)=>Math.max(m,f.val),0)*1.15;
+  const barW = (PW-factors.length*6)/factors.length;
+
+  factors.forEach((f,i)=>{
+    const bh = (f.val/maxVal)*PH;
+    const x = PL + i*(barW+6);
+    const y = PT+PH-bh;
+    g.fillStyle=f.col+'33'; g.strokeStyle=f.col; g.lineWidth=1.5;
+    g.beginPath(); g.roundRect(x,y,barW,bh,3); g.fill(); g.stroke();
+    // label on bar
+    g.fillStyle=f.col; g.font='8px monospace'; g.textAlign='center';
+    g.fillText(f.lbl, x+barW/2, y-5);
+    // FLOP value
+    const giga=(f.val/1e9).toFixed(2);
+    g.fillStyle=PAL.muted; g.font='8px monospace';
+    g.fillText(giga+'G', x+barW/2, PT+PH+12);
+  });
+
+  // y-axis label
+  g.save(); g.translate(14, PT+PH/2); g.rotate(-Math.PI/2);
+  g.fillStyle=PAL.muted; g.font='9px monospace'; g.textAlign='center';
+  g.fillText('FLOPs (forward only per layer)', 0, 0); g.restore();
+
+  // total annotation
+  const totalStr = total>=1e12 ? (total/1e12).toFixed(2)+'T' : (total/1e9).toFixed(1)+'G';
+  g.fillStyle=PAL.orange; g.font='bold 11px monospace'; g.textAlign='right';
+  g.fillText(`Total (${nLay} layers, causal): ${totalStr} FLOPs`, PL+PW, PT+14);
+
+  g.textAlign='left';
+  $('vSeqLen').textContent=`T = ${T}`;
+  $('vNEmbd').textContent=`n_embd = ${nE}`;
+  $('vNLayer').textContent=`n_layer = ${nLay}`;
+}
+['sSeqLen','sNEmbd','sNLayer'].forEach(id=>$(id).addEventListener('input',drawFlops));
+drawFlops();
 
 // ─────────────────────────────────────────────
 // SIDEBAR ACTIVE TRACKING
