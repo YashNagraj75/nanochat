@@ -105,6 +105,9 @@ ul{margin:.5rem 0 .5rem 1.5rem;line-height:2}
     <a href="#resid"><span class="num">08</span>Residual Lambdas</a>
     <a href="#paramflops"><span class="num">09</span>Total Training FLOPs</a>
     <a href="#flops"><span class="num">10</span>Attention FLOPs</a>
+    <a href="#smearcat"><span class="num">11</span>Smear Gate Cat</a>
+    <a href="#softcap"><span class="num">12</span>Logit Softcapping</a>
+    <a href="#fullarch"><span class="num">13</span>Full Architecture</a>
   </nav>
 </aside>
 
@@ -520,6 +523,65 @@ C  = A @ B          <span class="cm"># compute scores / output</span>
 dA = dC @ B.T       <span class="cm"># gradient w.r.t. Q (or scores)</span>
 dB = A.T @ dC       <span class="cm"># gradient w.r.t. K (or V)</span>
 <span class="cm"># → 3 passes × same shape = 3× forward cost</span></code></pre>
+</section>
+
+<!-- ══════════════════════════════════════════ §11 SMEAR CAT ══ -->
+<section class="section" id="smearcat">
+  <div class="section-header"><span class="snum">11</span><h2>Smear Gate — How the <code>cat</code> Works</h2></div>
+
+  <p>The smear gate mixes the <strong>previous token's embedding</strong> into each token before attention runs.</p>
+
+  <pre><code>gate = smear_lambda * sigmoid(smear_gate(x[:, 1:, :24]))  <span class="cm"># (B, T-1, 1)</span>
+x = torch.cat([x[:, :1], x[:, 1:] + gate * x[:, :-1]], dim=1)</code></pre>
+
+  <p>With <strong>T = 4 tokens</strong>, here is what happens step by step:</p>
+  <canvas id="cSmear" width="820" height="230" style="display:block;margin:1.5rem auto;border-radius:8px"></canvas>
+
+  <h3>Why <code>cat</code> instead of <code>F.pad</code>?</h3>
+  <p><code>F.pad</code> inserts a <em>zero vector</em> at position 0 and then gates it — blending a fake signal into token A. The <code>cat</code> approach keeps token 0 exactly unchanged. No spurious signal for the first token.</p>
+
+  <h3>Why <code>x[:, 1:]</code> for the gate input?</h3>
+  <p>The gate is computed from the <em>current</em> token's first 24 channels — it asks <em>"how much of my left neighbour do I want?"</em> Token 0 has no left neighbour so it is simply excluded from the gate computation.</p>
+</section>
+
+<!-- ══════════════════════════════════════════ §12 SOFTCAP ══ -->
+<section class="section" id="softcap">
+  <div class="section-header"><span class="snum">12</span><h2>Logit Softcapping</h2></div>
+
+  <p>Squashes logits into <strong>(−15, +15)</strong> smoothly — no hard boundary, no dead gradients.</p>
+
+  <pre><code>softcap = 15
+logits = softcap * torch.tanh(logits / softcap)</code></pre>
+
+  <h3>tanh vs hard clamp</h3>
+  <canvas id="cSoftcap" width="820" height="280" style="display:block;margin:1.5rem auto;border-radius:8px"></canvas>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+    <div class="callout">
+      <strong>Hard clamp</strong><br>
+      <code>logits.clamp(-15, 15)</code><br><br>
+      Gradient is <strong>zero</strong> outside [−15, 15]. Model can't learn from large logits.
+    </div>
+    <div class="callout">
+      <strong>Softcap (tanh)</strong><br>
+      <code>15 * tanh(logits / 15)</code><br><br>
+      Gradient is <strong>always nonzero</strong> (just shrinks). Training stays continuous.
+    </div>
+  </div>
+
+  <h3>Why cap at all?</h3>
+  <p>Early in training, random projections produce huge logits (e.g. 200, −300). Softmax of those collapses — one class gets probability ≈ 1, everything else ≈ 0. The model is confidently wrong before learning anything: loss spikes, exploding gradients, bfloat16 overflow. Softcapping prevents this from step 1.</p>
+
+  <div class="callout" style="margin-top:1rem">
+    <strong>The value 15</strong> — empirically tuned. Tight enough to stabilize early training, loose enough not to constrain a trained model's confidence. Popularized by Gemma 2.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ §13 FULL ARCH ══ -->
+<section class="section" id="fullarch">
+  <div class="section-header"><span class="snum">13</span><h2>Full Model Architecture — GPT Forward Pass</h2></div>
+  <p>End-to-end diagram of one forward pass through the GPT model, from token ids to logits. The transformer block is shown with all internal components: GQA attention, RoPE, value embedding injection, ReLU² MLP, residual scaling, and the pre/post-loop special ops (smear, backout, softcap).</p>
+  <canvas id="cFullArch" width="820" height="1160" style="display:block;margin:1.5rem auto;border-radius:10px"></canvas>
 </section>
 
 </main><!-- /#main -->
@@ -1162,6 +1224,407 @@ function drawFlops(){
 }
 ['sSeqLen','sNEmbd','sNLayer'].forEach(id=>$(id).addEventListener('input',drawFlops));
 drawFlops();
+
+// ─────────────────────────────────────────────
+// §11  SMEAR GATE CAT DIAGRAM
+// ─────────────────────────────────────────────
+function drawSmear(){
+  const ctx=C('cSmear',820,230);
+  ctx.fillStyle=PAL.bg2; ctx.fillRect(0,0,820,230);
+
+  const tokens=['A','B','C','D'];
+  const colors=['#58a6ff','#3fb950','#f78166','#d2a8ff'];
+  const bw=80,bh=44,gap=28;
+  const rowY=[30,120];
+  const startX=60;
+
+  // helper: draw a token box
+  function box(x,y,label,col,alpha=1){
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=col+'33';
+    ctx.strokeStyle=col;
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(x,y,bw,bh,6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=col; ctx.globalAlpha=1;
+    ctx.font='bold 16px monospace'; ctx.textAlign='center';
+    ctx.fillText(label, x+bw/2, y+bh/2+6);
+  }
+
+  // row labels
+  ctx.fillStyle=PAL.muted; ctx.font='13px monospace'; ctx.textAlign='left';
+  ctx.fillText('Input x:', 0, rowY[0]+bh/2+5);
+  ctx.fillText('Output:', 0, rowY[1]+bh/2+5);
+
+  // draw input row
+  tokens.forEach((t,i)=> box(startX+i*(bw+gap), rowY[0], t, colors[i]));
+
+  // draw output row
+  const outLabels=['A','B+g·A','C+g·B','D+g·C'];
+  tokens.forEach((_,i)=> box(startX+i*(bw+gap), rowY[1], outLabels[i], colors[i]));
+
+  // arrows: for B,C,D show contribution from previous
+  for(let i=1;i<4;i++){
+    const fromX = startX + (i-1)*(bw+gap) + bw/2;
+    const toX   = startX + i*(bw+gap) + bw/2;
+    const fromY = rowY[0]+bh;
+    const toY   = rowY[1];
+    // dashed arrow from prev input → current output
+    ctx.setLineDash([4,3]);
+    ctx.strokeStyle=colors[i-1]; ctx.lineWidth=1.5; ctx.globalAlpha=0.7;
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY+6);
+    ctx.bezierCurveTo(fromX, fromY+30, toX, toY-30, toX, toY-6);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // arrowhead
+    ctx.globalAlpha=0.9;
+    ctx.beginPath();
+    ctx.moveTo(toX,toY-6);
+    ctx.lineTo(toX-5,toY-16); ctx.lineTo(toX+5,toY-16);
+    ctx.closePath(); ctx.fillStyle=colors[i-1]; ctx.fill();
+    // gate label
+    ctx.fillStyle=PAL.muted; ctx.font='11px monospace'; ctx.textAlign='center';
+    ctx.globalAlpha=0.85;
+    ctx.fillText('× gate', (fromX+toX)/2+12, (fromY+toY)/2+4);
+  }
+  ctx.globalAlpha=1;
+
+  // token 0 note
+  ctx.fillStyle=PAL.muted; ctx.font='11px monospace'; ctx.textAlign='center';
+  ctx.fillText('unchanged', startX+bw/2, rowY[1]+bh+18);
+  ctx.fillText('(no prev)', startX+bw/2, rowY[1]+bh+31);
+
+  // straight arrow for token 0
+  ctx.strokeStyle=colors[0]; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(startX+bw/2, rowY[0]+bh);
+  ctx.lineTo(startX+bw/2, rowY[1]);
+  ctx.stroke();
+}
+drawSmear();
+
+// ─────────────────────────────────────────────
+// §12  SOFTCAP CURVE
+// ─────────────────────────────────────────────
+function drawSoftcap(){
+  const ctx=C('cSoftcap',820,280);
+  ctx.fillStyle=PAL.bg2; ctx.fillRect(0,0,820,280);
+
+  const pad=55, W=820-pad*2, H=280-pad*2;
+  const cx=pad, cy=pad;
+  const softcap=15;
+  // map data coords to canvas
+  const xMin=-40,xMax=40,yMin=-20,yMax=20;
+  function dx(v){ return cx + (v-xMin)/(xMax-xMin)*W; }
+  function dy(v){ return cy+H - (v-yMin)/(yMax-yMin)*H; }
+
+  // grid
+  ctx.strokeStyle=PAL.border; ctx.lineWidth=1;
+  [-30,-20,-10,0,10,20,30].forEach(v=>{
+    ctx.beginPath(); ctx.moveTo(dx(v),cy); ctx.lineTo(dx(v),cy+H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,dy(v)); ctx.lineTo(cx+W,dy(v)); ctx.stroke();
+  });
+
+  // axes
+  ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(dx(xMin),dy(0)); ctx.lineTo(dx(xMax),dy(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(dx(0),cy); ctx.lineTo(dx(0),cy+H); ctx.stroke();
+
+  // softcap line (±15 dashed)
+  ctx.setLineDash([5,4]); ctx.strokeStyle='#58a6ff44'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx,dy(softcap)); ctx.lineTo(cx+W,dy(softcap)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,dy(-softcap)); ctx.lineTo(cx+W,dy(-softcap)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#58a6ff88'; ctx.font='12px monospace'; ctx.textAlign='left';
+  ctx.fillText('+15 cap',cx+4,dy(softcap)-6);
+  ctx.fillText('−15 cap',cx+4,dy(-softcap)+16);
+
+  // hard clamp
+  ctx.strokeStyle='#f78166'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(dx(xMin),dy(-softcap));
+  ctx.lineTo(dx(-softcap),dy(-softcap));
+  ctx.lineTo(dx(-softcap),dy(-softcap)); // corner
+  for(let x=xMin;x<=xMax;x+=0.5){
+    const y=Math.max(-softcap,Math.min(softcap,x));
+    ctx[x===xMin?'moveTo':'lineTo'](dx(x),dy(y));
+  }
+  ctx.stroke();
+
+  // softcap tanh
+  ctx.strokeStyle='#3fb950'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  for(let x=xMin;x<=xMax;x+=0.5){
+    const y=softcap*Math.tanh(x/softcap);
+    ctx[x===xMin?'moveTo':'lineTo'](dx(x),dy(y));
+  }
+  ctx.stroke();
+
+  // axis labels
+  ctx.fillStyle=PAL.muted; ctx.font='12px monospace'; ctx.textAlign='center';
+  ctx.fillText('raw logit value', cx+W/2, cy+H+38);
+  ctx.save(); ctx.translate(14, cy+H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('output logit', 0, 0); ctx.restore();
+
+  [-30,-20,-10,10,20,30].forEach(v=>{
+    ctx.textAlign='center';
+    ctx.fillStyle=PAL.muted; ctx.font='11px monospace';
+    ctx.fillText(v,dx(v),dy(0)+16);
+    ctx.fillText(v,dx(0)-8,dy(v)+4); // y axis
+  });
+
+  // legend
+  const lx=cx+W-160, ly=cy+16;
+  ctx.fillStyle='#f78166'; ctx.fillRect(lx,ly,20,3);
+  ctx.fillStyle=PAL.text; ctx.font='13px monospace'; ctx.textAlign='left';
+  ctx.fillText('hard clamp',lx+26,ly+5);
+  ctx.fillStyle='#3fb950'; ctx.fillRect(lx,ly+22,20,3);
+  ctx.fillStyle=PAL.text;
+  ctx.fillText('softcap (tanh)',lx+26,ly+27);
+}
+drawSoftcap();
+
+// ─────────────────────────────────────────────
+// §13  FULL ARCHITECTURE DIAGRAM
+// ─────────────────────────────────────────────
+function drawFullArch(){
+  const cv=$('cFullArch');
+  cv.width=820; cv.height=1160;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#0d1117'; ctx.fillRect(0,0,820,1160);
+
+  const K={
+    bg:'#0d1117',bg2:'#161b22',bg3:'#21262d',border:'#30363d',
+    text:'#e6edf3',muted:'#7d8590',dim:'#484f58',
+    blue:'#58a6ff',green:'#3fb950',purple:'#a371f7',
+    orange:'#f0883e',red:'#ff7b72',teal:'#39d353',
+    amber:'#ffa657',pink:'#f778ba',cyan:'#56d8e4'
+  };
+
+  // ── helpers ──
+  function rr(x,y,w,h,fill,stroke,r=7){
+    ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); ctx.stroke();
+  }
+  function t(text,x,y,col=K.text,sz=12,bold=false,align='center'){
+    ctx.fillStyle=col; ctx.font=(bold?'bold ':'')+sz+'px monospace';
+    ctx.textAlign=align; ctx.textBaseline='middle'; ctx.fillText(text,x,y);
+  }
+  function varr(x,y1,y2,col=K.muted){
+    ctx.strokeStyle=col; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(x,y1); ctx.lineTo(x,y2-8); ctx.stroke();
+    ctx.fillStyle=col;
+    ctx.beginPath(); ctx.moveTo(x,y2); ctx.lineTo(x-5,y2-9); ctx.lineTo(x+5,y2-9); ctx.closePath(); ctx.fill();
+  }
+  function hline(x1,y,x2,col=K.dim,dash=[]){
+    ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2,y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function pill(cx,y,w,h,fill,stroke,text,col){
+    rr(cx-w/2,y,w,h,fill,stroke,h/2);
+    t(text,cx,y+h/2,col,11);
+  }
+
+  // ── layout ──
+  const MX=310, BW=330;   // main flow centre + box width
+  const LX=MX-BW/2;       // left edge of main boxes  (= 145)
+  const RX=510;            // right annotation start
+  const ARWS=20;           // standard arrow gap
+
+  let y=18;
+
+  // ── TITLE ──
+  t('GPT Forward Pass — Full Architecture',MX,y+10,K.text,14,true);
+  y+=32;
+
+  // ── INPUT ──
+  rr(LX,y,BW,36,K.blue+'1a',K.blue);
+  t('Input   idx : (B, T)',MX,y+18,K.blue,13,true);
+  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── WTE ──
+  rr(LX,y,BW,36,K.blue+'10',K.blue+'99');
+  t('wte  →  x : (B, T, n_embd)',MX,y+18,K.blue,12);
+  t('nn.Embedding(vocab, n_embd)',RX,y+18,K.muted,10,'','left');
+  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── NORM ──
+  pill(MX,y,130,26,K.teal+'12',K.teal+'88','RMSNorm  (x)',K.teal);
+  y+=26; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── SMEAR GATE ──
+  rr(LX,y,BW,36,K.orange+'18',K.orange);
+  t('Smear Gate',MX,y+12,K.orange,12,true);
+  t('x[:, 1:] + gate · x[:, :-1]',MX,y+26,K.orange+'cc',10);
+  t('prev-token blend  (training only)',RX,y+18,K.muted,10,'','left');
+  y+=36;
+
+  // x0 save dashed branch (right side)
+  const x0Y=y+10;
+  ctx.strokeStyle=K.dim; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+  ctx.beginPath();
+  ctx.moveTo(LX+BW*0.72,y-18); ctx.lineTo(LX+BW*0.72,x0Y);
+  ctx.lineTo(RX+14,x0Y); ctx.stroke(); ctx.setLineDash([]);
+  rr(RX+4,x0Y-10,108,22,K.bg3,K.dim,5);
+  t('x0 = x  (saved)',RX+58,x0Y+1,K.dim,10);
+
+  varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ══════════ LOOP ══════════
+  const loopTopY=y;
+  const LOOPX=LX-18;   // bracket x
+
+  // resid formula strip
+  rr(LX,y,BW,26,K.bg2,K.border,5);
+  t('resid_λ[i] · x  +  x0_λ[i] · x0',MX,y+13,K.muted,11);
+  t('per-layer learnable scales',RX,y+13,K.dim,10,'','left');
+  y+=26+6;
+
+  // ── BLOCK OUTER BOX ──
+  const blkTopY=y;
+  const blkH=488;
+  const blkBX=LX+12, blkBW=BW-24;
+
+  // draw block box shell
+  rr(LX,blkTopY,BW,blkH,K.bg2,K.border+'88',10);
+  t('Transformer Block  ×N',MX,blkTopY+13,K.muted,11,true);
+
+  // ── ATTENTION SECTION ──
+  const attnY=blkTopY+28;
+  const attnH=216;
+  rr(blkBX,attnY,blkBW,attnH,K.green+'07',K.green+'44',8);
+  t('CausalSelfAttention',blkBX+blkBW/2,attnY+11,K.green,11,true);
+
+  let ay=attnY+26;
+  // norm
+  pill(blkBX+blkBW/2,ay,110,22,K.teal+'0d',K.teal+'55','RMSNorm',K.teal);
+  ay+=22+6;
+
+  // Q K V projections
+  const qw=(blkBW-8)/3-4;
+  const qlabels=['q_proj','k_proj','v_proj'];
+  const qshapes=['(B,T,H,D)','(B,T,Hkv,D)','(B,T,Hkv,D)'];
+  const qcols=[K.blue,K.purple,K.amber];
+  for(let i=0;i<3;i++){
+    const qx=blkBX+i*(qw+4);
+    rr(qx,ay,qw,30,qcols[i]+'18',qcols[i]+'88',6);
+    t(qlabels[i],qx+qw/2,ay+10,qcols[i],10,true);
+    t(qshapes[i],qx+qw/2,ay+22,qcols[i]+'99',9);
+  }
+  ay+=30+6;
+
+  // RoPE | norm+scale  and  VE gate
+  rr(blkBX,ay,92,22,K.cyan+'12',K.cyan+'55',5);
+  t('RoPE on Q, K',blkBX+46,ay+11,K.cyan,10);
+  rr(blkBX+96,ay,96,22,K.teal+'0d',K.teal+'44',5);
+  t('norm + ×1.2',blkBX+144,ay+11,K.teal,10);
+  // VE gate box (right of row)
+  rr(blkBX+blkBW-84,ay,80,22,K.pink+'18',K.pink+'66',5);
+  t('⊕ VE gate',blkBX+blkBW-44,ay+11,K.pink,10);
+  ay+=22+8;
+
+  // Flash Attention
+  rr(blkBX+blkBW/2-68,ay,136,26,K.green+'18',K.green,8);
+  t('Flash Attention (causal)',blkBX+blkBW/2,ay+13,K.green,11);
+  ay+=26+6;
+
+  // o_proj + residual
+  rr(blkBX+blkBW/2-52,ay,104,24,K.blue+'12',K.blue+'88',6);
+  t('o_proj  →  n_embd',blkBX+blkBW/2,ay+12,K.blue,10);
+  ay+=24+4;
+  t('⊕  residual add',blkBX+blkBW/2,ay+8,K.muted,10);
+
+  // ── MLP SECTION ──
+  const mlpY=attnY+attnH+10;
+  const mlpH=180;
+  rr(blkBX,mlpY,blkBW,mlpH,K.purple+'07',K.purple+'44',8);
+  t('MLP',blkBX+blkBW/2,mlpY+11,K.purple,11,true);
+
+  let my=mlpY+26;
+  pill(blkBX+blkBW/2,my,110,22,K.teal+'0d',K.teal+'55','RMSNorm',K.teal);
+  my+=22+6;
+  rr(blkBX+blkBW/2-62,my,124,24,K.purple+'18',K.purple+'88',6);
+  t('fc1  →  4 × n_embd',blkBX+blkBW/2,my+12,K.purple,10);
+  my+=24+5;
+  rr(blkBX+blkBW/2-36,my,72,22,K.amber+'12',K.amber+'66',6);
+  t('ReLU²',blkBX+blkBW/2,my+11,K.amber,10);
+  my+=22+5;
+  rr(blkBX+blkBW/2-62,my,124,24,K.purple+'18',K.purple+'88',6);
+  t('fc2  →  n_embd',blkBX+blkBW/2,my+12,K.purple,10);
+  my+=24+5;
+  t('⊕  residual add',blkBX+blkBW/2,my+8,K.muted,10);
+
+  // VE note inside block (bottom right)
+  const veNoteY=blkTopY+blkH-22;
+  t('VE injected on alternating layers  (has_ve)',blkBX+blkBW-4,veNoteY,K.dim,9,'','right');
+
+  // ── LOOP BRACKET (left) ──
+  const loopBotY=blkTopY+blkH+6;
+  ctx.strokeStyle=K.border; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(LOOPX+8,loopTopY); ctx.lineTo(LOOPX,loopTopY);
+  ctx.lineTo(LOOPX,loopBotY);   ctx.lineTo(LOOPX+8,loopBotY);
+  ctx.stroke();
+  t('× n_layer',LOOPX-4,(loopTopY+loopBotY)/2,K.muted,10,'','right');
+
+  // ── BACKOUT BRANCH (right side, mid block) ──
+  const backY=blkTopY+blkH/2;
+  ctx.strokeStyle=K.red+'88'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+  ctx.beginPath();
+  ctx.moveTo(LX+BW,backY); ctx.lineTo(RX+4,backY); ctx.stroke();
+  ctx.setLineDash([]);
+  rr(RX+4,backY-12,140,26,K.red+'14',K.red+'88',5);
+  t('x_backout = x',RX+74,backY-3,K.red,10,true);
+  t('captured at layer N // 2',RX+74,backY+9,K.dim,9);
+
+  y=blkTopY+blkH;
+  varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── BACKOUT SUBTRACT ──
+  rr(LX,y,BW,36,K.red+'18',K.red);
+  t('x  −  backout_λ · x_backout',MX,y+12,K.red,12,true);
+  t('remove low-level residual features',MX,y+26,K.red+'aa',10);
+  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── FINAL NORM ──
+  pill(MX,y,130,26,K.teal+'12',K.teal+'88','Final RMSNorm',K.teal);
+  y+=26; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── LM HEAD ──
+  rr(LX,y,BW,36,K.amber+'12',K.amber);
+  t('lm_head  →  (B, T, vocab_size)',MX,y+18,K.amber,12,true);
+  t('Linear(n_embd, vocab)',RX,y+18,K.muted,10,'','left');
+  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── SOFTCAP ──
+  rr(LX,y,BW,36,K.orange+'18',K.orange);
+  t('Softcap:  15 · tanh(logits / 15)',MX,y+12,K.orange,12,true);
+  t('clamp logits to (−15, +15) smoothly',MX,y+26,K.orange+'aa',10);
+  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+
+  // ── LOSS ──
+  rr(LX,y,BW,36,K.green+'18',K.green);
+  t('Cross-Entropy Loss',MX,y+18,K.green,13,true);
+  t('(B, T) token predictions vs targets',RX,y+18,K.muted,10,'','left');
+
+  // ── RIGHT SIDE: shape legend column ──
+  const ry=blkTopY+52;
+  t('Shapes inside block:',RX,ry,K.dim,10,'','left');
+  const shapes=[
+    ['Q',K.blue,'(B, T, n_head, head_dim)'],
+    ['K,V',K.purple,'(B, T, n_kv_head, head_dim)'],
+    ['head_dim','#e6edf3','n_embd // n_head'],
+    ['y',K.green,'(B, T, n_head, head_dim)'],
+    ['→ reshape',K.muted,'(B, T, n_embd)'],
+  ];
+  shapes.forEach(([lbl,col,val],i)=>{
+    const sy=ry+18+i*18;
+    t(lbl+' :',RX+28,sy,col,9,'','right');
+    t(val,RX+32,sy,K.muted,9,'','left');
+  });
+}
+drawFullArch();
 
 // ─────────────────────────────────────────────
 // SIDEBAR ACTIVE TRACKING

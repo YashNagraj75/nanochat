@@ -1,18 +1,19 @@
-import torch
-import sys, os
-import torch.nn as nn
-import torch.nn.functional as F
+from math import log
+import os
+import sys
 from dataclasses import dataclass
 from functools import partial
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.modules import transformer
-
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from gpt.common import COMPUTE_DTYPE, get_base_dir
 from gpt.flash_attention import flash_attn, flash_attn_func, flash_attn_kv_func
-from gpt.optim import MuonAdamW, DistMuonAdamW
+from gpt.optim import DistMuonAdamW, MuonAdamW
 
 
 @dataclass
@@ -427,3 +428,241 @@ class GPT(nn.Module):
         )  # The 6 here is for forward + backward for the linear layers
 
         return num_flops_per_token
+
+    def num_scaling_params(self):
+        """
+        Return detailed parameter counts for scaling law analysis.
+        Different papers use different conventions:
+        - Kaplan et al. excluded embedding parameters
+        - Chinchilla included all parameters
+        Ref: https://arxiv.org/abs/2203.15556 (Chinchilla paper)
+        Ref: https://arxiv.org/abs/2001.08361 (Kaplan et al. original scaling laws paper)
+
+        Returns a dict with counts for each parameter group, so downstream analysis
+        can experiment with which combination gives the cleanest scaling laws.
+        """
+        # Count each group separately (mirrors the grouping in setup_optimizers)
+        wte = sum(p.numel() for p in self.transformer.wte.parameters())
+        value_embeds = sum(p.numel() for p in self.value_embeds.parameters())
+        lm_head = sum(p.numel() for p in self.lm_head.parameters())
+        transformer_matrices = sum(p.numel() for p in self.transformer.h.parameters())
+        scalars = (
+            self.resid_lambdas.numel()
+            + self.x0_lambdas.numel()
+            + self.smear_gate.weight.numel()
+            + self.smear_lambda.numel()
+            + self.backout_lambda.numel()
+        )
+        total = wte + value_embeds + lm_head + transformer_matrices + scalars
+        assert total == sum(p.numel() for p in self.parameters()), (
+            "Parameter count mismatch"
+        )
+        return {
+            "wte": wte,
+            "value_embeds": value_embeds,
+            "lm_head": lm_head,
+            "transformer_matrices": transformer_matrices,
+            "scalars": scalars,
+            "total": total,
+        }
+
+    def setup_optimizer(
+        self,
+        unembedding_lr=0.004,
+        embedding_lr=0.2,
+        matrix_lr=0.02,
+        weight_decay=0.0,
+        scalar_lr=0.5,
+    ):
+        model_dim = self.config.n_embd
+        ddp, rank, local_rank, world_size = get_dist_info()
+
+        # Separate out all parameters into groups
+        matrix_params = list(self.transformer.h.parameters())
+        value_embeds_params = list(self.value_embeds.parameters())
+        embedding_params = list(self.transformer.wte.parameters())
+        lm_head_params = list(self.lm_head.parameters())
+        resid_params = [self.resid_lambdas]
+        x0_params = [self.x0_lambdas]
+        smear_params = [self.smear_gate.weight, self.smear_lambda, self.backout_lambda]
+        assert len(list(self.parameters())) == len(matrix_params) + len(
+            embedding_params
+        ) + len(lm_head_params) + len(value_embeds_params) + len(resid_params) + len(
+            x0_params
+        ) + len(smear_params)
+
+        # Scale the LR for the AdamW parameters by ∝1/√dmodel (tuned for 768 dim model)
+        dmodel_lr_scale = (model_dim / 768) ** -0.5
+        print0(
+            f"Scaling the LR for the AdamW parameters ∝1/√({model_dim}/768) = {dmodel_lr_scale:.6f}"
+        )
+
+        # Build param_groups with all required fields explicit
+        param_groups = [
+            # AdamW groups (embeddings, lm_head, scalars)
+            dict(
+                kind="adamw",
+                params=lm_head_params,
+                lr=unembedding_lr * dmodel_lr_scale,
+                betas=(0.8, 0.96),
+                eps=1e-10,
+                weight_decay=0.01,
+            ),
+            dict(
+                kind="adamw",
+                params=embedding_params,
+                lr=embedding_lr * dmodel_lr_scale,
+                betas=(0.8, 0.995),
+                eps=1e-10,
+                weight_decay=0.001,
+            ),
+            dict(
+                kind="adamw",
+                params=value_embeds_params,
+                lr=embedding_lr * dmodel_lr_scale * 0.5,
+                betas=(0.8, 0.995),
+                eps=1e-10,
+                weight_decay=0.01,
+            ),
+            dict(
+                kind="adamw",
+                params=resid_params,
+                lr=scalar_lr * 0.01,
+                betas=(0.8, 0.95),
+                eps=1e-10,
+                weight_decay=0.05,
+            ),
+            dict(
+                kind="adamw",
+                params=x0_params,
+                lr=scalar_lr,
+                betas=(0.96, 0.95),
+                eps=1e-10,
+                weight_decay=0.0,
+            ),  # higher beta1 for x0
+            dict(
+                kind="adamw",
+                params=smear_params,
+                lr=0.2,
+                betas=(0.8, 0.95),
+                eps=1e-10,
+                weight_decay=0.0,
+            ),
+        ]
+        # Muon groups (matrix params, grouped by shape for stacking)
+        for shape in sorted({p.shape for p in matrix_params}):
+            group_params = [p for p in matrix_params if p.shape == shape]
+            param_groups.append(
+                dict(
+                    kind="muon",
+                    params=group_params,
+                    lr=matrix_lr,
+                    momentum=0.95,
+                    ns_steps=5,
+                    beta2=0.9,
+                    weight_decay=weight_decay,
+                )
+            )
+
+        Factory = DistMuonAdamW if ddp else MuonAdamW
+        optimizer = Factory(param_groups)
+        for group in optimizer.param_groups:
+            group["initial_lr"] = group["lr"]
+        return optimizer
+
+    def forward(self, idx, targets=None, kv_cache=None, loss_reduction=None):
+        B, T = idx.size()
+
+        # Grab the rotary embeddings for the current sequence length (asserting we don't exceed pre-computed size)
+        assert T <= self.cos.size(1), (
+            f"Sequence length grew beyond the rotary embeddings cache: {T}: {self.cos.size(1)}"
+        )
+        assert idx.device == self.cos.device, (
+            f"Rotary embeddings and idx are on different devices, idx:{idx.device}, embeds:{self.cos.device}"
+        )
+        assert self.cos.dtype != COMPUTE_DTYPE, (
+            f"Rotary embeddings must be in this dtype: {COMPUTE_DTYPE} got {self.cos.dtype}"
+        )
+
+        # Offset the rotary embeddings if the kv_cache exists
+        T0 = 0 if kv_cache is None else kv_cache.get_pos()
+        cos, sin = self.cos[:, T0 : T0 + T], self.sin[:, T0 : T0 + T]
+
+        # Embed the tokens
+        x = self.transformer.wte(idx)
+        x = x.to(COMPUTE_DTYPE)
+        x = norm(x)
+
+        # Now smear-> add the previous tokens embeddings into the current token
+        if kv_cache is None:  # For training
+            gate = self.smear_lambda.to(x.dtype) * torch.sigmoid(
+                self.smear_gate(x[:, 1:, :24])
+            )
+            x = torch.cat([x[:, :1], x[:, 1:] + gate * x[:, :-1]], dim=1)
+
+        else:  # If kv_cache is present then read prev_emebedding from cache
+            x_pre_smear = kv_cache.prev_embedding
+            kv_cache.prev_embedding = x[:, -1:, :]
+            if T > 1:
+                # Prefill phase: apply smear like in training above
+                gate = self.smear_lambda.to(x.dtype) * torch.sigmoid(
+                    self.smear_gate(x[:, 1:, :24])
+                )
+                x = torch.cat([x[:, :1], x[:, 1:] + gate * x[:, :-1]], dim=1)
+
+            elif x_pre_smear is not None:
+                # Decode phase: single token, use cached prev embedding
+                gate = self.smear_lambda.to(x.dtype) * torch.sigmoid(
+                    self.smear_gate(x[:, 1:, :24])
+                )
+                x = x + gate * x_pre_smear
+
+        # Now send the tokens to the trunk of the transformer, this is after the embedding has been created after adding the
+        # rotary embeddings and passed through the smear gate.
+        x0 = x
+        n_layer = self.config.n_layer
+        backout_layer = n_layer // 2
+        x_backout = None
+        for i, block in enumerate(self.transformer.h):
+            x = self.resid_lambdas[i] * x + self.x0_lambdas[i] * x0
+            ve = (
+                self.value_embeds[str(i)](idx).to(x.dtype)
+                if str(i) in self.value_embeds
+                else None
+            )
+            x = block(x, ve, cos, sin, self.window_sizes[i], kv_cache)
+            if i == backout_layer:
+                x_backout = x
+
+        # Remove mid layer residual low-level features
+        if x_backout is not None:
+            x = x - self.backout_lambda.to(x.dtype) * x_backout
+
+        x = norm(x)
+
+        # Forward to lm_head, here we are going to softcap the logits in
+        # order to stabilize attn during training
+        softcap = 15
+        logits = self.lm_head(x)  # shape: (B,T, padded_vocab_size) -> very big tensor
+        logits = logits[..., : self.config.vocab_size].float()
+        logits = (
+            softcap * torch.tanh(logits / softcap)
+        )  # Here instead of hard capping the logits we use tanh so that even outliers get a gradient but small
+
+        if targets is None:
+            # For training
+            loss = F.cross_entropy(
+                logits.view(-1, logits.size(-1)),
+                targets.view(-1),
+                ignore_index=-1,
+                reduction=loss_reduction,
+            )
+            return loss
+
+        else:
+            return logits  # Inference
+
+
+    @torch.inference_mode
+    def generate(self, tokens, max_tokens, temperature,=1.0, top_ke=None, seed=42):
+

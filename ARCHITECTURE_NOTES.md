@@ -273,3 +273,73 @@ Three passes, each the same cost → **3× the forward**.
 
 ### Why "effective" seq len?
 In causal attention, token `t` attends only to positions `0..t`. On average each query sees `T/2` keys, so `effective_seq_len ≈ T/2` for a full causal sequence.
+
+---
+
+## 11. Smear Gate — how the `cat` works
+
+The smear gate mixes the **previous token's embedding** into each token before attention runs.
+
+```python
+gate = smear_lambda * sigmoid(smear_gate(x[:, 1:, :24]))  # (B, T-1, 1)
+x = torch.cat([x[:, :1], x[:, 1:] + gate * x[:, :-1]], dim=1)
+```
+
+**Concrete example with T=4 tokens `[A, B, C, D]`:**
+
+```
+x[:, :-1] = [A, B, C]    ← previous tokens (shifted left by 1)
+x[:, 1:]  = [B, C, D]    ← current tokens 1..end
+gate      = [g_B, g_C, g_D]  ← one scalar per token, range (0,1)
+
+blended   = [B + g_B*A,  C + g_C*B,  D + g_D*C]
+
+x[:, :1]  = [A]          ← token 0 unchanged (no previous token)
+
+result    = cat([A],  [B+g_B*A, C+g_C*B, D+g_D*C])
+          = [A,  B+g_B*A,  C+g_C*B,  D+g_D*C]
+```
+
+**Why `cat` instead of `F.pad`?**
+- `F.pad` would pad a zero vector at position 0 and then gate it — blending a fake "zero token" into A.
+- `cat([x[:, :1], ...])` keeps token 0 exactly as-is. No spurious signal.
+
+**Why only `x[:, 1:]` for the gate input?**
+The gate is computed from the *current* token's first 24 channels — it decides *"how much of my left neighbor do I want?"* Token 0 has no left neighbor so it simply isn't in the gate computation.
+
+---
+
+## 12. Logit Softcapping
+
+**What it does:** Squashes logits into the range `(-softcap, +softcap)` smoothly.
+
+```python
+softcap = 15
+logits = softcap * torch.tanh(logits / softcap)
+```
+
+**Step by step:**
+```
+logits / 15    → scale down to small range
+tanh(...)      → squash to (-1, 1) smoothly
+* 15           → scale back to (-15, 15)
+```
+
+**vs hard clipping:**
+```python
+# Hard clip — gradient dies at boundary:
+logits.clamp(-15, 15)
+
+# Softcap — gradient always exists (just shrinks):
+15 * tanh(logits / 15)
+```
+
+**Why cap at all?**
+Early in training, random projections produce very large logits (e.g. 200, −300). Softmax of those collapses: one class gets probability ≈ 1, everything else ≈ 0. The model is "confidently wrong" before it's learned anything — causing loss spikes, exploding gradients, and bfloat16 instability.
+
+Softcapping keeps logits bounded so softmax stays numerically well-behaved from step 1.
+
+**Why `tanh` not `clamp`?**
+`clamp` zeros the gradient outside `[-15, 15]` — the model can't learn from those logits. `tanh` always has a gradient (just small for large inputs), so training stays continuous.
+
+**The value 15** is empirically chosen — tight enough to stabilize early training, loose enough not to constrain a trained model's confidence. Popularized by Gemma 2.
