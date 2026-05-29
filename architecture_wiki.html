@@ -4,124 +4,567 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>nanochat Architecture Wiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Linux+Libertine+O&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Wikipedia dark mode palette (Codex design tokens) ── */
 :root{
-  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
-  --text:#e6edf3;--muted:#7d8590;
-  --accent:#58a6ff;--green:#3fb950;--orange:#e3b341;
-  --red:#f85149;--purple:#bc8cff;--teal:#56d364;
+  --bg:       #101418;  /* page background */
+  --bg2:      #1d2126;  /* surface / sidebar */
+  --bg3:      #27292d;  /* elevated surface */
+  --border:   #3a3d42;  /* subtle dividers */
+  --border2:  #4f5457;  /* stronger dividers */
+  --text:     #e8e6e3;  /* primary text — warm off-white */
+  --muted:    #a2a9b1;  /* secondary text */
+  --link:     #6fa3d7;  /* Wikipedia progressive blue */
+  --link-vis: #9670c0;  /* visited */
+  --green:    #59c16c;
+  --orange:   #d4a94a;
+  --red:      #e05252;
+  --purple:   #a08de0;
+  --teal:     #5eb8b0;
+  --code-fg:  #c9d1d9;
 }
+
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
 
-/* SIDEBAR */
-#sidebar{width:230px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.25rem 0;flex-shrink:0}
-#sidebar .brand{padding:0 1rem 1.25rem;border-bottom:1px solid var(--border);margin-bottom:.75rem}
-#sidebar .brand h2{font-size:.8rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
-#sidebar .brand p{font-size:.72rem;color:var(--muted);margin-top:.2rem}
-#sidebar a{display:flex;align-items:center;gap:.5rem;padding:.38rem 1rem;color:var(--muted);text-decoration:none;font-size:.8rem;transition:all .15s;border-left:2px solid transparent}
-#sidebar a:hover,#sidebar a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent)}
-#sidebar a .num{font-size:.68rem;background:var(--bg3);color:var(--muted);padding:.1rem .4rem;border-radius:.25rem;min-width:1.4rem;text-align:center;font-family:monospace}
-#sidebar a.active .num{background:var(--accent);color:var(--bg)}
+/* Body: column layout — header on top, then body-wrap row below */
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Source Serif 4',Georgia,'Linux Libertine O','Times New Roman',serif;
+  font-size:16px;
+  line-height:1.65;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
 
-/* MAIN */
-#main{flex:1;max-width:900px;padding:2.5rem 3rem;overflow-x:hidden}
+/* ── SITE HEADER (full-width, centered title + tabs) ── */
+#site-header{
+  width:100%;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border2);
+  flex-shrink:0;
+  text-align:center;
+}
+#site-header .header-inner{
+  padding:2.25rem 2rem 0;
+}
+#site-header .wiki-wordmark{
+  font-family:'Source Serif 4',Georgia,serif;
+  font-size:2.6rem;
+  font-weight:300;
+  letter-spacing:.04em;
+  color:var(--text);
+  display:block;
+  line-height:1;
+}
+#site-header .wiki-tagline{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.78rem;
+  color:var(--muted);
+  font-style:italic;
+  margin-top:.35rem;
+  display:block;
+  letter-spacing:.02em;
+}
 
-/* HERO */
-#hero{margin-bottom:3rem}
-#hero h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.4rem}
-#hero p{color:var(--muted);font-size:.88rem}
+/* Horizontal page tabs — just below the title */
+#page-tabs{
+  display:flex;
+  justify-content:center;
+  gap:0;
+  margin-top:1.5rem;
+  border-top:1px solid var(--border);
+}
+#page-tabs .tab{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.8rem;
+  font-weight:400;
+  color:var(--muted);
+  background:transparent;
+  border:none;
+  border-top:2px solid transparent;
+  padding:.55rem 1.1rem;
+  cursor:pointer;
+  transition:color .15s, border-color .15s, background .15s;
+  white-space:nowrap;
+  margin-top:-1px;  /* overlap the border-top of #page-tabs */
+}
+#page-tabs .tab:hover{color:var(--text);background:var(--bg3)}
+#page-tabs .tab.active{
+  color:var(--link);
+  border-top-color:var(--link);
+  background:var(--bg);
+}
 
-/* SECTIONS */
-.section{margin-bottom:5rem;scroll-margin-top:2rem}
-.section-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
-.section-header h2{font-size:1.35rem;font-weight:700}
-.snum{font-size:.7rem;font-weight:700;color:var(--bg);background:var(--accent);padding:.2rem .5rem;border-radius:.25rem}
+/* ── BODY WRAP (sidebar + main, row) ── */
+#body-wrap{
+  display:flex;
+  flex:1;
+  min-height:0;
+}
 
-/* TLDR */
-.tldr{background:linear-gradient(135deg,rgba(88,166,255,.07),rgba(88,166,255,.02));border:1px solid rgba(88,166,255,.22);border-radius:.5rem;padding:.85rem 1.15rem;margin-bottom:1.4rem;font-size:.87rem}
-.tldr b{color:var(--accent);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.3rem}
+/* ── PAGE VISIBILITY ── */
+.page{display:none}
+.page.active{display:block}
 
-/* CALLOUTS */
-.callout{border-radius:.5rem;padding:.8rem 1.1rem;margin:.9rem 0;font-size:.87rem}
-.callout b{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.3rem}
-.insight{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.22)}.insight b{color:var(--green)}
-.warn{background:rgba(227,179,65,.07);border:1px solid rgba(227,179,65,.22)}.warn b{color:var(--orange)}
-.danger{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22)}.danger b{color:var(--red)}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+a:visited{color:var(--link-vis)}
 
-/* CODE */
-pre{background:var(--bg2);border:1px solid var(--border);border-radius:.5rem;padding:.9rem 1.1rem;overflow-x:auto;font-family:'Fira Code','Cascadia Code',monospace;font-size:.8rem;line-height:1.65;margin:.9rem 0}
-code{font-family:'Fira Code','Cascadia Code',monospace;font-size:.83em;background:var(--bg3);padding:.12em .38em;border-radius:.25rem;color:var(--purple)}
-pre code{background:none;padding:0;font-size:inherit;color:var(--text)}
-.kw{color:#ff7b72}.fn{color:#d2a8ff}.cm{color:#8b949e}.nb{color:#ffa657}.st{color:#a5d6ff}
+/* ── SIDEBAR (TOC panel) ── */
+#sidebar{
+  width:220px;
+  min-height:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  position:sticky;top:0;height:100vh;
+  overflow-y:auto;
+  padding:1.5rem 0;
+  flex-shrink:0;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+#sidebar .brand{
+  padding:0 1rem 1.25rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:.75rem;
+}
+#sidebar .brand h2{
+  font-size:.75rem;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.12em;
+  font-family:inherit;
+}
+#sidebar .brand p{font-size:.7rem;color:var(--muted);margin-top:.2rem;opacity:.6}
 
-/* MATH BOX */
-.math{font-family:monospace;background:var(--bg2);border:1px solid var(--border);border-radius:.4rem;padding:.7rem 1rem;margin:.8rem 0;font-size:.92rem;text-align:center;color:var(--orange)}
+/* TOC entries */
+#sidebar a{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.35rem 1rem;
+  color:var(--muted);text-decoration:none;
+  font-size:.78rem;line-height:1.4;
+  transition:background .12s,color .12s;
+  border-left:3px solid transparent;
+}
+#sidebar a:hover{color:var(--text);background:var(--bg3)}
+#sidebar a.active{color:var(--link);background:var(--bg3);border-left-color:var(--link)}
+#sidebar a .num{
+  font-family:monospace;font-size:.68rem;
+  background:var(--bg3);color:var(--muted);
+  padding:.08rem .38rem;border-radius:.2rem;
+  min-width:1.4rem;text-align:center;flex-shrink:0;
+}
+#sidebar a.active .num{background:var(--link);color:var(--bg)}
 
-/* TABLE */
-table{border-collapse:collapse;width:100%;margin:.9rem 0;font-size:.85rem}
-th{background:var(--bg3);padding:.5rem .9rem;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
-td{padding:.5rem .9rem;border-bottom:1px solid var(--border);font-family:monospace}
+/* TOC groups — only the active group is shown */
+.toc-group{display:none}
+.toc-group.active{display:block}
+.toc-sep{
+  display:block;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.13em;
+  color:var(--muted);padding:.7rem 1rem .3rem;opacity:.55;
+}
+.toc-item{display:flex;align-items:center;gap:.5rem;
+  padding:.35rem 1rem;color:var(--muted);text-decoration:none;
+  font-size:.78rem;line-height:1.4;transition:background .12s,color .12s;
+  border-left:3px solid transparent;
+}
+.toc-item:hover{color:var(--text);background:var(--bg3)}
+.toc-item.active{color:var(--link);background:var(--bg3);border-left-color:var(--link)}
 
-/* VIZ CONTAINERS */
-.viz{background:var(--bg2);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;margin:1.25rem 0}
-.viz-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1rem}
-canvas{display:block;border-radius:.4rem;background:var(--bg)}
+/* ── MAIN ARTICLE ── */
+#main{flex:1;max-width:900px;padding:2rem 3rem 4rem;overflow-x:hidden}
 
-/* CONTROLS */
+/* ── ARTICLE TITLE (Wikipedia style) ── */
+#hero{
+  margin-bottom:1.5rem;
+  padding-bottom:1rem;
+  border-bottom:1px solid var(--border2);
+}
+#hero h1{
+  font-family:'Source Serif 4',Georgia,'Linux Libertine O',serif;
+  font-size:2rem;font-weight:400;  /* Wikipedia titles are not bold */
+  color:var(--text);
+  line-height:1.2;
+  margin-bottom:.35rem;
+}
+#hero .hero-sub{
+  font-size:.88rem;color:var(--muted);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-style:italic;
+}
+
+/* ── SECTIONS ── */
+.section{margin-bottom:3.5rem;scroll-margin-top:2rem}
+
+.section-header{
+  display:flex;align-items:baseline;gap:.65rem;
+  margin-bottom:1rem;
+  padding-bottom:.5rem;
+  border-bottom:1px solid var(--border2);  /* Wikipedia section underline */
+}
+.section-header h2{
+  font-family:'Source Serif 4',Georgia,serif;
+  font-size:1.5rem;font-weight:400;  /* Wikipedia h2: not bold */
+  color:var(--text);
+  flex:1;
+}
+.snum{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.68rem;font-weight:500;
+  color:var(--muted);
+  background:var(--bg3);
+  border:1px solid var(--border);
+  padding:.18rem .5rem;border-radius:.2rem;
+  flex-shrink:0;
+}
+
+/* ── TL;DR (hatnote style) ── */
+.tldr{
+  background:var(--bg2);
+  border-left:3px solid var(--link);
+  padding:.65rem 1rem .65rem 1rem;
+  margin-bottom:1.25rem;
+  font-size:.9rem;
+  color:var(--text);
+  font-style:italic;
+}
+.tldr b{
+  font-style:normal;color:var(--link);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  display:block;margin-bottom:.25rem;
+}
+
+/* ── NOTE/CALLOUT boxes (Wikipedia infobox style) ── */
+.callout{
+  border:1px solid var(--border);
+  background:var(--bg2);
+  padding:.75rem 1rem;
+  margin:.9rem 0;
+  font-size:.9rem;
+}
+.callout b{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  display:block;margin-bottom:.3rem;
+}
+.insight{border-left:3px solid var(--green)}.insight b{color:var(--green)}
+.warn   {border-left:3px solid var(--orange)}.warn b{color:var(--orange)}
+.danger {border-left:3px solid var(--red)}.danger b{color:var(--red)}
+
+/* ── CODE ── */
+pre{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  padding:.85rem 1rem;
+  overflow-x:auto;
+  font-family:'Cascadia Code','Fira Code','JetBrains Mono','Courier New',monospace;
+  font-size:.8rem;line-height:1.7;margin:.85rem 0;
+  border-left:3px solid var(--border2);
+}
+code{
+  font-family:'Cascadia Code','Fira Code',monospace;
+  font-size:.83em;
+  background:var(--bg3);
+  padding:.12em .36em;
+  color:var(--teal);
+}
+pre code{background:none;padding:0;font-size:inherit;color:var(--code-fg)}
+.kw{color:#cc8888}.fn{color:#a8c4e0}.cm{color:#6b737c}.nb{color:#c4a96a}.st{color:#8fbfba}
+
+/* ── MATH BOX ── */
+.math{
+  font-family:'Cascadia Code','Fira Code',monospace;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--purple);
+  padding:.8rem 1.1rem;
+  margin:.85rem 0;font-size:.92rem;
+  text-align:center;color:var(--purple);
+}
+
+/* ── TABLE (Wikipedia wikitable style) ── */
+table{border-collapse:collapse;width:100%;margin:.9rem 0;font-size:.87rem}
+th{
+  background:var(--bg3);
+  padding:.5rem .85rem;text-align:left;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);
+  border:1px solid var(--border);
+}
+td{padding:.5rem .85rem;border:1px solid var(--border);font-family:monospace;font-size:.83rem}
+tr:nth-child(even) td{background:var(--bg2)}
+
+/* ── VIZ CONTAINERS (Wikipedia figure style) ── */
+.viz{
+  display:flex;flex-direction:column;  /* flex so we can push caption to bottom */
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  padding:1rem 1.1rem;
+  margin:1.25rem 0;
+  width:100%;
+  gap:.75rem;
+}
+/* Caption always renders last — Wikipedia puts it below the figure */
+.viz-title{
+  order:99;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.76rem;font-weight:400;font-style:italic;
+  color:var(--muted);
+  text-align:center;
+  padding-top:.5rem;
+  border-top:1px solid var(--border);
+  margin-top:.25rem;
+}
+canvas{display:block;background:var(--bg);max-width:100%}
+
+/* ── CONTROLS ── */
 .controls{display:flex;flex-wrap:wrap;gap:1.25rem;margin-top:1.1rem;align-items:center}
 .cg{display:flex;flex-direction:column;gap:.3rem}
-.cg label{font-size:.75rem;color:var(--muted);font-family:monospace}
-input[type=range]{width:150px;accent-color:var(--accent)}
-.cv{font-size:.75rem;color:var(--accent);font-family:monospace}
+.cg label{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.74rem;color:var(--muted);
+}
+input[type=range]{width:150px;accent-color:var(--link)}
+.cv{
+  font-family:'Cascadia Code','Fira Code',monospace;
+  font-size:.74rem;color:var(--link);
+}
 
-/* GRID */
+/* ── PAGE CARDS (overview navigation) ── */
+.page-cards{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:.85rem;
+  margin-top:2rem;clear:both;
+}
+.pcard{
+  background:var(--bg2);border:1px solid var(--border2);
+  padding:1rem 1.1rem;cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.pcard:hover{background:var(--bg3);border-color:var(--link)}
+.pcard-num{
+  display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--link);margin-bottom:.25rem;
+}
+.pcard-title{
+  display:block;font-family:'Source Serif 4',Georgia,serif;
+  font-size:1rem;font-weight:400;color:var(--text);margin-bottom:.2rem;
+}
+.pcard-sub{
+  display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.74rem;color:var(--muted);line-height:1.4;
+}
+
+/* ── ARTICLE LEAD + INFOBOX ── */
+.article-lead{margin-bottom:2rem;overflow:hidden}
+.article-lead p{margin:.75rem 0;font-size:1rem;line-height:1.7}
+.article-lead p:first-of-type::first-letter{
+  font-size:1.6em;font-weight:300;float:left;
+  margin:.05em .08em 0 0;line-height:1;color:var(--text);
+}
+
+/* Wikipedia-style infobox (right-floated summary table) */
+.infobox{
+  float:right;
+  clear:right;
+  width:260px;
+  margin:0 0 1rem 1.5rem;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-collapse:collapse;
+  font-size:.82rem;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+.infobox-title{
+  background:var(--bg3);
+  padding:.5rem .7rem;
+  text-align:center;
+  font-size:.8rem;
+  font-weight:600;
+  color:var(--text);
+  border-bottom:1px solid var(--border2);
+  letter-spacing:.03em;
+}
+.infobox td{
+  padding:.3rem .6rem;
+  border:none;
+  border-bottom:1px solid var(--border);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:none;
+}
+.infobox tr:nth-child(even) td{background:var(--bg3)}
+.ib-label{color:var(--muted);white-space:nowrap;font-size:.78rem}
+.infobox td:last-child{font-family:'Cascadia Code','Fira Code',monospace;font-size:.78rem;color:var(--link)}
+
+/* Section header [§] edit link */
+.section-header .edit-link{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:.72rem;font-weight:400;
+  color:var(--link);opacity:.5;
+  margin-left:.5rem;
+  cursor:default;
+  flex-shrink:0;
+}
+.section-header:hover .edit-link{opacity:1}
+
+/* ── GRID ── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.9rem 0}
-p{margin:.7rem 0}
+p{margin:.75rem 0}
 ul{margin:.5rem 0 .5rem 1.5rem;line-height:2}
 
-/* SCROLLBAR */
+/* ── TYPOGRAPHY DETAILS ── */
+strong{font-weight:600;color:var(--text)}   /* serif bold needs to be explicit */
+em{font-style:italic}
+b{font-weight:600}
+
+/* Wikipedia uses <hr> between lead and TOC */
+hr.lead-rule{
+  border:none;border-top:1px solid var(--border2);
+  margin:1.5rem 0;clear:both;
+}
+
+/* "See also" / cross-reference hatnote */
+.hatnote{
+  font-style:italic;font-size:.9rem;
+  color:var(--muted);
+  border-left:2px solid var(--border2);
+  padding-left:.75rem;margin:.5rem 0 1rem;
+}
+
+/* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--border)}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
 
-@media(max-width:860px){#sidebar{display:none}#main{padding:1.5rem}.g2{grid-template-columns:1fr}}
+@media(max-width:860px){#sidebar{display:none}#main{padding:1.5rem}.g2{grid-template-columns:1fr}#page-tabs .tab{padding:.45rem .65rem;font-size:.72rem}}
 </style>
 </head>
 <body>
 
+<!-- ══ SITE HEADER ══ -->
+<header id="site-header">
+  <div class="header-inner">
+    <span class="wiki-wordmark">Nanochat</span>
+    <span class="wiki-tagline">Architecture Reference — GPT pretraining from scratch on Hopper-class GPUs</span>
+  </div>
+  <nav id="page-tabs">
+    <button class="tab active" data-page="0">Overview</button>
+    <button class="tab" data-page="1">Position &amp; Attention</button>
+    <button class="tab" data-page="2">Embeddings &amp; Gates</button>
+    <button class="tab" data-page="3">Stability &amp; Init</button>
+    <button class="tab" data-page="4">Compute &amp; Architecture</button>
+  </nav>
+</header>
+
+<!-- ══ BODY WRAP ══ -->
+<div id="body-wrap">
+
 <aside id="sidebar">
-  <div class="brand"><h2>nanochat</h2><p>Architecture Reference</p></div>
-  <nav>
-    <a href="#rope"><span class="num">01</span>RoPE</a>
-    <a href="#headdim"><span class="num">02</span>head_dim / GQA</a>
-    <a href="#attnflow"><span class="num">03</span>Attention Flow</a>
-    <a href="#ve"><span class="num">04</span>Value Embeddings</a>
-    <a href="#smear"><span class="num">05</span>Smear Gate</a>
-    <a href="#backout"><span class="num">06</span>Backout Lambda</a>
-    <a href="#init"><span class="num">07</span>Weight Init</a>
-    <a href="#resid"><span class="num">08</span>Residual Lambdas</a>
-    <a href="#paramflops"><span class="num">09</span>Total Training FLOPs</a>
-    <a href="#flops"><span class="num">10</span>Attention FLOPs</a>
-    <a href="#smearcat"><span class="num">11</span>Smear Gate Cat</a>
-    <a href="#softcap"><span class="num">12</span>Logit Softcapping</a>
-    <a href="#fullarch"><span class="num">13</span>Full Architecture</a>
+  <div class="brand"><h2>Contents</h2><p id="toc-page-label">Overview</p></div>
+  <nav id="toc-nav">
+    <div class="toc-group active" data-group="0">
+      <span class="toc-sep">On this page</span>
+      <a href="#" onclick="return false" class="toc-item">Introduction</a>
+      <a href="#" onclick="return false" class="toc-item">Model overview</a>
+    </div>
+    <div class="toc-group" data-group="1">
+      <span class="toc-sep">Position &amp; Attention</span>
+      <a href="#rope" class="toc-item"><span class="num">01</span>RoPE</a>
+      <a href="#headdim" class="toc-item"><span class="num">02</span>head_dim / GQA</a>
+      <a href="#attnflow" class="toc-item"><span class="num">03</span>Attention Flow</a>
+    </div>
+    <div class="toc-group" data-group="2">
+      <span class="toc-sep">Embeddings &amp; Gates</span>
+      <a href="#ve" class="toc-item"><span class="num">04</span>Value Embeddings</a>
+      <a href="#smear" class="toc-item"><span class="num">05</span>Smear Gate</a>
+      <a href="#backout" class="toc-item"><span class="num">06</span>Backout Lambda</a>
+    </div>
+    <div class="toc-group" data-group="3">
+      <span class="toc-sep">Stability &amp; Init</span>
+      <a href="#init" class="toc-item"><span class="num">07</span>Weight Init</a>
+      <a href="#resid" class="toc-item"><span class="num">08</span>Residual Lambdas</a>
+    </div>
+    <div class="toc-group" data-group="4">
+      <span class="toc-sep">Compute &amp; Architecture</span>
+      <a href="#paramflops" class="toc-item"><span class="num">09</span>Training FLOPs</a>
+      <a href="#flops" class="toc-item"><span class="num">10</span>Attention FLOPs</a>
+      <a href="#smearcat" class="toc-item"><span class="num">11</span>Smear Gate Cat</a>
+      <a href="#softcap" class="toc-item"><span class="num">12</span>Logit Softcapping</a>
+      <a href="#fullarch" class="toc-item"><span class="num">13</span>Full Architecture</a>
+    </div>
   </nav>
 </aside>
 
 <main id="main">
+
+<!-- ═══════════════ PAGE 0 : OVERVIEW ═══════════════ -->
+<div class="page active" data-page="0">
 <div id="hero">
   <h1>nanochat Architecture</h1>
-  <p>Interactive reference · GPT pretraining from scratch on Hopper-class GPUs</p>
+  <p class="hero-sub">From <em>nanochat</em> — a GPT pretraining stack targeting Hopper-class GPUs (SM 9.x)</p>
 </div>
+
+<div class="article-lead">
+  <table class="infobox">
+    <tr><th colspan="2" class="infobox-title">nanochat at a glance</th></tr>
+    <tr><td class="ib-label">Target GPU</td><td>Hopper (SM 9.x)</td></tr>
+    <tr><td class="ib-label">Compute dtype</td><td>bfloat16</td></tr>
+    <tr><td class="ib-label">Attention</td><td>Flash Attention 3 / GQA</td></tr>
+    <tr><td class="ib-label">Optimizer</td><td>Muon + AdamW</td></tr>
+    <tr><td class="ib-label">Tokenizer</td><td>RustBPE + tiktoken</td></tr>
+    <tr><td class="ib-label">Vocab size</td><td>32,768</td></tr>
+    <tr><td class="ib-label">Position enc.</td><td>RoPE</td></tr>
+    <tr><td class="ib-label">Inspired by</td><td>karpathy/nanochat</td></tr>
+  </table>
+
+  <p><b>nanochat</b> is a from-scratch GPT pretraining stack built for efficiency on Hopper-class GPUs. It incorporates a number of architectural refinements over a baseline transformer: <a href="#" data-goto="1" data-anchor="rope">Rotary Position Embeddings (RoPE)</a>, <a href="#" data-goto="2" data-anchor="ve">Value Embeddings</a>, a <a href="#" data-goto="2" data-anchor="smear">Smear Gate</a>, <a href="#" data-goto="2" data-anchor="backout">Backout Lambda</a>, and a combined <a href="#" data-goto="3" data-anchor="init">weight initialization</a> strategy designed for bfloat16 stability.</p>
+
+  <p>This article documents the design decisions encountered during construction, with interactive visualizations for the less intuitive components. Each section answers a specific question that arose while building the model from scratch.</p>
+</div>
+<hr class="lead-rule">
+
+<!-- Page nav cards -->
+<div class="page-cards">
+  <div class="pcard" data-goto="1">
+    <span class="pcard-num">I</span>
+    <span class="pcard-title">Position &amp; Attention</span>
+    <span class="pcard-sub">RoPE · head_dim · GQA · Attention Flow</span>
+  </div>
+  <div class="pcard" data-goto="2">
+    <span class="pcard-num">II</span>
+    <span class="pcard-title">Embeddings &amp; Gates</span>
+    <span class="pcard-sub">Value Embeddings · Smear Gate · Backout λ</span>
+  </div>
+  <div class="pcard" data-goto="3">
+    <span class="pcard-num">III</span>
+    <span class="pcard-title">Stability &amp; Init</span>
+    <span class="pcard-sub">Weight Init · Uniform vs Normal · Residual λ</span>
+  </div>
+  <div class="pcard" data-goto="4">
+    <span class="pcard-num">IV</span>
+    <span class="pcard-title">Compute &amp; Architecture</span>
+    <span class="pcard-sub">FLOPs · Logit Softcap · Full Forward Pass</span>
+  </div>
+</div>
+</div><!-- /page 0 -->
+
+<!-- ═══════════════ PAGE 1 : POSITION & ATTENTION ═══════════════ -->
+<div class="page" data-page="1">
 
 <!-- ══════════════════════════════════════
      §1  ROPE
 ══════════════════════════════════════ -->
 <section class="section" id="rope">
-  <div class="section-header"><span class="snum">01</span><h2>Rotary Position Embeddings (RoPE)</h2></div>
+  <div class="section-header"><span class="snum">01</span><h2>Rotary Position Embeddings (RoPE)</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Rotate pairs of Q/K dimensions by an angle ∝ position. Dot-products then depend only on <em>relative</em> distance — absolute positions cancel out automatically.
@@ -190,7 +633,7 @@ sin   = torch.sin(freqs).repeat_interleave(<span class="nb">2</span>, dim=-<span
      §2  HEAD DIM / GQA
 ══════════════════════════════════════ -->
 <section class="section" id="headdim">
-  <div class="section-header"><span class="snum">02</span><h2>head_dim = n_embd ÷ n_head (not ÷ n_kv_head)</h2></div>
+  <div class="section-header"><span class="snum">02</span><h2>head_dim = n_embd ÷ n_head (not ÷ n_kv_head)</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     head_dim is the per-head vector width, always split over query heads. GQA keeps head_dim identical across Q, K, V — only the number of K/V heads shrinks.
@@ -219,7 +662,7 @@ sin   = torch.sin(freqs).repeat_interleave(<span class="nb">2</span>, dim=-<span
      §3  ATTENTION FLOW
 ══════════════════════════════════════ -->
 <section class="section" id="attnflow">
-  <div class="section-header"><span class="snum">03</span><h2>Full Attention Data Flow</h2></div>
+  <div class="section-header"><span class="snum">03</span><h2>Full Attention Data Flow</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     x → q/k/v_proj → RoPE on Q&K → flash_attn → reshape → o_proj → add to residual stream.
@@ -238,11 +681,16 @@ sin   = torch.sin(freqs).repeat_interleave(<span class="nb">2</span>, dim=-<span
   </ul>
 </section>
 
+</div><!-- /page 1 -->
+
+<!-- ═══════════════ PAGE 2 : EMBEDDINGS & GATES ═══════════════ -->
+<div class="page" data-page="2">
+
 <!-- ══════════════════════════════════════
      §4  VALUE EMBEDDINGS
 ══════════════════════════════════════ -->
 <section class="section" id="ve">
-  <div class="section-header"><span class="snum">04</span><h2>Value Embeddings (VE)</h2></div>
+  <div class="section-header"><span class="snum">04</span><h2>Value Embeddings (VE)</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Every other layer, inject the raw token embedding back into V via a learned gate [0, 3]. Prevents token identity from drowning in deep residual rewrites.
@@ -279,7 +727,7 @@ v    = v + gate.unsqueeze(-<span class="nb">1</span>) * ve         <span class="
      §5  SMEAR GATE
 ══════════════════════════════════════ -->
 <section class="section" id="smear">
-  <div class="section-header"><span class="snum">05</span><h2>Smear Gate</h2></div>
+  <div class="section-header"><span class="snum">05</span><h2>Smear Gate</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Mix the previous token's embedding into the current one — bigram-level info injected before attention even runs. Starts at zero, opts in during training.
@@ -303,7 +751,7 @@ x      = x + gate * smear_lambda.exp() * x_prev</code></pre>
      §6  BACKOUT LAMBDA
 ══════════════════════════════════════ -->
 <section class="section" id="backout">
-  <div class="section-header"><span class="snum">06</span><h2>Backout Lambda</h2></div>
+  <div class="section-header"><span class="snum">06</span><h2>Backout Lambda</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Subtract a fraction of the mid-layer residual from the final residual. Strips low-level noise so the LM head sees a cleaner, more abstract signal.
@@ -330,11 +778,16 @@ x      = x + gate * smear_lambda.exp() * x_prev</code></pre>
   </div>
 </section>
 
+</div><!-- /page 2 -->
+
+<!-- ═══════════════ PAGE 3 : STABILITY & INIT ═══════════════ -->
+<div class="page" data-page="3">
+
 <!-- ══════════════════════════════════════
      §7  WEIGHT INIT
 ══════════════════════════════════════ -->
 <section class="section" id="init">
-  <div class="section-header"><span class="snum">07</span><h2>Weight Initialization — Uniform vs Normal, and √3</h2></div>
+  <div class="section-header"><span class="snum">07</span><h2>Weight Initialization — Uniform vs Normal, and √3</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Use Uniform(−√3σ, √3σ) instead of Normal for projections. Same variance, but hard-capped — no outlier tails to destabilise bfloat16 early in training.
@@ -372,7 +825,7 @@ mlp.c_proj  → zeros</code></pre>
      §8  RESIDUAL LAMBDAS
 ══════════════════════════════════════ -->
 <section class="section" id="resid">
-  <div class="section-header"><span class="snum">08</span><h2>Residual Lambdas — 1.15 → 1.05 Schedule</h2></div>
+  <div class="section-header"><span class="snum">08</span><h2>Residual Lambdas — 1.15 → 1.05 Schedule</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Scale the residual stream by λ &gt; 1 before adding each block. Linearly decays 1.15 → 1.05 from early to late layers. Amplifies signal, prevents vanishing gradients in deep nets.
@@ -404,11 +857,16 @@ mlp.c_proj  → zeros</code></pre>
   </div>
 </section>
 
+</div><!-- /page 3 -->
+
+<!-- ═══════════════ PAGE 4 : COMPUTE & ARCHITECTURE ═══════════════ -->
+<div class="page" data-page="4">
+
 <!-- ══════════════════════════════════════
      §9  TOTAL TRAINING FLOPS
 ══════════════════════════════════════ -->
 <section class="section" id="paramflops">
-  <div class="section-header"><span class="snum">09</span><h2>Total Training FLOPs — 6 × params + attn_flops</h2></div>
+  <div class="section-header"><span class="snum">09</span><h2>Total Training FLOPs — 6 × params + attn_flops</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     Every linear layer costs 6 FLOPs per parameter per token during training (2 forward + 2 backward dA + 2 backward dW). Attention matmuls are added separately because they have no parameters — they scale with T², not param count.
@@ -464,7 +922,7 @@ mlp.c_proj  → zeros</code></pre>
      §10  ATTENTION FLOPS
 ══════════════════════════════════════ -->
 <section class="section" id="flops">
-  <div class="section-header"><span class="snum">10</span><h2>Attention FLOP Count — 12 × n_embd × q × seq_len</h2></div>
+  <div class="section-header"><span class="snum">10</span><h2>Attention FLOP Count — 12 × n_embd × q × seq_len</h2><span class="edit-link">[§]</span></div>
 
   <div class="tldr"><b>TL;DR</b>
     The 12 = 2 (multiply-add) × 2 (two matmuls: Q@K<sup>T</sup> and scores@V) × 3 (training forward + 2 backward passes). Summed over all heads gives <code>12 × n_embd × T_q × T_k</code>.
@@ -527,7 +985,7 @@ dB = A.T @ dC       <span class="cm"># gradient w.r.t. K (or V)</span>
 
 <!-- ══════════════════════════════════════════ §11 SMEAR CAT ══ -->
 <section class="section" id="smearcat">
-  <div class="section-header"><span class="snum">11</span><h2>Smear Gate — How the <code>cat</code> Works</h2></div>
+  <div class="section-header"><span class="snum">11</span><h2>Smear Gate — How the <code>cat</code> Works</h2><span class="edit-link">[§]</span></div>
 
   <p>The smear gate mixes the <strong>previous token's embedding</strong> into each token before attention runs.</p>
 
@@ -546,7 +1004,7 @@ x = torch.cat([x[:, :1], x[:, 1:] + gate * x[:, :-1]], dim=1)</code></pre>
 
 <!-- ══════════════════════════════════════════ §12 SOFTCAP ══ -->
 <section class="section" id="softcap">
-  <div class="section-header"><span class="snum">12</span><h2>Logit Softcapping</h2></div>
+  <div class="section-header"><span class="snum">12</span><h2>Logit Softcapping</h2><span class="edit-link">[§]</span></div>
 
   <p>Squashes logits into <strong>(−15, +15)</strong> smoothly — no hard boundary, no dead gradients.</p>
 
@@ -579,12 +1037,16 @@ logits = softcap * torch.tanh(logits / softcap)</code></pre>
 
 <!-- ══════════════════════════════════════════ §13 FULL ARCH ══ -->
 <section class="section" id="fullarch">
-  <div class="section-header"><span class="snum">13</span><h2>Full Model Architecture — GPT Forward Pass</h2></div>
+  <div class="section-header"><span class="snum">13</span><h2>Full Model Architecture — GPT Forward Pass</h2><span class="edit-link">[§]</span></div>
   <p>End-to-end diagram of one forward pass through the GPT model, from token ids to logits. The transformer block is shown with all internal components: GQA attention, RoPE, value embedding injection, ReLU² MLP, residual scaling, and the pre/post-loop special ops (smear, backout, softcap).</p>
-  <canvas id="cFullArch" width="820" height="1160" style="display:block;margin:1.5rem auto;border-radius:10px"></canvas>
+  <canvas id="cFullArch" width="820" height="1400" style="display:block;margin:1.5rem auto;border-radius:10px"></canvas>
 </section>
 
+</div><!-- /page 4 -->
+
 </main><!-- /#main -->
+
+</div><!-- /#body-wrap -->
 
 <script>
 // ─────────────────────────────────────────────
@@ -1385,13 +1847,14 @@ function drawSoftcap(){
 drawSoftcap();
 
 // ─────────────────────────────────────────────
-// §13  FULL ARCHITECTURE DIAGRAM
+// §13  FULL ARCHITECTURE DIAGRAM  (bottom → top)
 // ─────────────────────────────────────────────
 function drawFullArch(){
+  // ── canvas ──
   const cv=$('cFullArch');
-  cv.width=820; cv.height=1160;
+  cv.width=820; cv.height=1400;
   const ctx=cv.getContext('2d');
-  ctx.fillStyle='#0d1117'; ctx.fillRect(0,0,820,1160);
+  ctx.fillStyle='#0d1117'; ctx.fillRect(0,0,820,1400);
 
   const K={
     bg:'#0d1117',bg2:'#161b22',bg3:'#21262d',border:'#30363d',
@@ -1401,228 +1864,288 @@ function drawFullArch(){
     amber:'#ffa657',pink:'#f778ba',cyan:'#56d8e4'
   };
 
-  // ── helpers ──
-  function rr(x,y,w,h,fill,stroke,r=7){
+  // ── primitives ──
+  function rr(x,y,w,h,fill,stroke,r=8){
     ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); ctx.stroke();
   }
-  function t(text,x,y,col=K.text,sz=12,bold=false,align='center'){
-    ctx.fillStyle=col; ctx.font=(bold?'bold ':'')+sz+'px monospace';
-    ctx.textAlign=align; ctx.textBaseline='middle'; ctx.fillText(text,x,y);
-  }
-  function varr(x,y1,y2,col=K.muted){
-    ctx.strokeStyle=col; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(x,y1); ctx.lineTo(x,y2-8); ctx.stroke();
+  function t(s,x,y,col=K.text,sz=12,bold=false,align='center'){
     ctx.fillStyle=col;
-    ctx.beginPath(); ctx.moveTo(x,y2); ctx.lineTo(x-5,y2-9); ctx.lineTo(x+5,y2-9); ctx.closePath(); ctx.fill();
+    ctx.font=(bold?'bold ':'')+sz+'px monospace';
+    ctx.textAlign=align; ctx.textBaseline='middle';
+    ctx.fillText(s,x,y);
   }
-  function hline(x1,y,x2,col=K.dim,dash=[]){
-    ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash(dash);
-    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2,y); ctx.stroke();
+  // upward arrow: shaft from yBot → yTop (yBot > yTop in canvas coords)
+  function uarr(x,yBot,yTop,col=K.muted){
+    ctx.strokeStyle=col; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(x,yBot); ctx.lineTo(x,yTop+9); ctx.stroke();
+    ctx.fillStyle=col;
+    ctx.beginPath(); ctx.moveTo(x,yTop); ctx.lineTo(x-5,yTop+10); ctx.lineTo(x+5,yTop+10); ctx.closePath(); ctx.fill();
+  }
+  function pill(cx,y,w,h,fill,stroke,label,col){
+    rr(cx-w/2,y,w,h,fill,stroke,h/2);
+    t(label,cx,y+h/2,col,11);
+  }
+  function ann(s,x,y,col=K.muted,align='left'){  // right-panel annotation
+    t(s,x,y,col,10,false,align);
+  }
+  function dashLine(x1,y1,x2,y2,col=K.dim){
+    ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
     ctx.setLineDash([]);
   }
-  function pill(cx,y,w,h,fill,stroke,text,col){
-    rr(cx-w/2,y,w,h,fill,stroke,h/2);
-    t(text,cx,y+h/2,col,11);
-  }
 
-  // ── layout ──
-  const MX=310, BW=330;   // main flow centre + box width
-  const LX=MX-BW/2;       // left edge of main boxes  (= 145)
-  const RX=510;            // right annotation start
-  const ARWS=20;           // standard arrow gap
-
-  let y=18;
+  // ── layout constants ──
+  // Main flow: centre MX=320, width BW=346, left edge LX=147
+  // Right annotations start at RX=505
+  const MX=320, BW=346, LX=MX-BW/2, RX=508;
+  const BH=44;   // standard box height
+  const G=24;    // standard arrow gap between elements
 
   // ── TITLE ──
-  t('GPT Forward Pass — Full Architecture',MX,y+10,K.text,14,true);
-  y+=32;
+  t('GPT  ·  Forward Pass  ·  Full Architecture',MX,20,K.text,14,true);
+  t('↑  data flows bottom → top  ↑',MX,38,K.dim,10);
 
-  // ── INPUT ──
-  rr(LX,y,BW,36,K.blue+'1a',K.blue);
-  t('Input   idx : (B, T)',MX,y+18,K.blue,13,true);
-  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+  // ═══════════════════════════════════════
+  // TOP SECTION  (training vs inference split)
+  // ═══════════════════════════════════════
 
-  // ── WTE ──
-  rr(LX,y,BW,36,K.blue+'10',K.blue+'99');
-  t('wte  →  x : (B, T, n_embd)',MX,y+18,K.blue,12);
-  t('nn.Embedding(vocab, n_embd)',RX,y+18,K.muted,10,'','left');
-  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
+  // Training branch (left half of top)
+  const TBX=LX, TBW=(BW-10)/2;  // left box
+  const IBX=LX+TBW+10, IBW=TBW; // right box (inference)
 
-  // ── NORM ──
-  pill(MX,y,130,26,K.teal+'12',K.teal+'88','RMSNorm  (x)',K.teal);
-  y+=26; varr(MX,y,y+ARWS); y+=ARWS;
+  rr(TBX,60,TBW,BH,K.green+'18',K.green);
+  t('Cross-Entropy Loss',TBX+TBW/2,60+14,K.green,11,true);
+  t('F.cross_entropy(logits,targets)',TBX+TBW/2,60+30,K.green+'aa',9);
 
-  // ── SMEAR GATE ──
-  rr(LX,y,BW,36,K.orange+'18',K.orange);
-  t('Smear Gate',MX,y+12,K.orange,12,true);
-  t('x[:, 1:] + gate · x[:, :-1]',MX,y+26,K.orange+'cc',10);
-  t('prev-token blend  (training only)',RX,y+18,K.muted,10,'','left');
-  y+=36;
+  rr(IBX,60,IBW,BH,K.blue+'14',K.blue+'88');
+  t('return logits',IBX+IBW/2,60+14,K.blue,11,true);
+  t('(inference — no targets)',IBX+IBW/2,60+30,K.blue+'aa',9);
 
-  // x0 save dashed branch (right side)
-  const x0Y=y+10;
-  ctx.strokeStyle=K.dim; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+  // convergence arrows from each branch down to a single line
+  uarr(TBX+TBW/2,117,60+BH); // from merge point up to training box bottom
+  uarr(IBX+IBW/2,117,60+BH);
+
+  // condition label between them
+  t('targets ?',MX,108,K.dim,10);
+
+  // merge line
+  ctx.strokeStyle=K.border; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(TBX+TBW/2,117); ctx.lineTo(IBX+IBW/2,117); ctx.stroke();
+  uarr(MX,130,117); // single arrow from softcap area up to merge line
+
+  // ═══════════════════════════════════════
+  // SOFTCAP  y=148
+  // ═══════════════════════════════════════
+  rr(LX,148,BW,BH+6,K.orange+'18',K.orange);
+  t('Softcap',MX,148+16,K.orange,12,true);
+  t('15 · tanh( logits / 15 )',MX,148+32,K.orange+'cc',10);
+  ann('smooth bound (−15, +15)',RX,148+17);
+  ann('tanh keeps gradient alive',RX,148+30,K.dim);
+  uarr(MX,148+BH+6+G, 148+BH+6); // y=222→198
+
+  // ═══════════════════════════════════════
+  // LM HEAD  y=222
+  // ═══════════════════════════════════════
+  const LHY=222;
+  rr(LX,LHY,BW,BH,K.amber+'12',K.amber);
+  t('lm_head  →  (B, T, vocab_size)',MX,LHY+BH/2,K.amber,12,true);
+  ann('Linear(n_embd, padded_vocab)',RX,LHY+BH/2);
+  uarr(MX,LHY+BH+G, LHY+BH);
+
+  // ═══════════════════════════════════════
+  // FINAL RMSN  y=290
+  // ═══════════════════════════════════════
+  pill(MX,290,152,30,K.teal+'12',K.teal+'88','Final  RMSNorm',K.teal);
+  uarr(MX,290+30+G, 290+30);
+
+  // ═══════════════════════════════════════
+  // BACKOUT  y=344
+  // ═══════════════════════════════════════
+  const BOY=344;
+  rr(LX,BOY,BW,BH+6,K.red+'18',K.red);
+  t('x  −  backout_λ · x_backout',MX,BOY+16,K.red,12,true);
+  t('remove mid-layer low-level residue',MX,BOY+32,K.red+'bb',10);
+  ann('backout_lambda = 0.2 (init)',RX,BOY+17);
+  ann('x_backout captured at N//2',RX,BOY+30,K.dim);
+  uarr(MX,BOY+BH+6+G, BOY+BH+6);
+
+  // ═══════════════════════════════════════
+  // BLOCK  y=418 to y=990   h=572
+  // ═══════════════════════════════════════
+  const BLKY=418, BLKH=572, BLKBOTX=LX+14, BLKBW=BW-28;
+  rr(LX,BLKY,BW,BLKH,K.bg2,K.border+'66',10);
+  // "Transformer Block ×N" label at BOTTOM of outer box (data enters from below)
+  t('Transformer Block',MX,BLKY+BLKH-18,K.muted,11,true);
+  t('( × n_layer )',MX,BLKY+BLKH-6,K.dim,9);
+
+  // ── loop bracket on left ──
+  const LOOPTOP=394, LOOPBOT=1042;
+  ctx.strokeStyle=K.border+'aa'; ctx.lineWidth=1.5;
   ctx.beginPath();
-  ctx.moveTo(LX+BW*0.72,y-18); ctx.lineTo(LX+BW*0.72,x0Y);
-  ctx.lineTo(RX+14,x0Y); ctx.stroke(); ctx.setLineDash([]);
-  rr(RX+4,x0Y-10,108,22,K.bg3,K.dim,5);
-  t('x0 = x  (saved)',RX+58,x0Y+1,K.dim,10);
+  ctx.moveTo(LX-7,LOOPTOP); ctx.lineTo(LX-19,LOOPTOP);
+  ctx.lineTo(LX-19,LOOPBOT); ctx.lineTo(LX-7,LOOPBOT);
+  ctx.stroke();
+  ctx.save();
+  ctx.translate(LX-25,(LOOPTOP+LOOPBOT)/2);
+  ctx.rotate(-Math.PI/2);
+  t('× n_layer',0,0,K.muted,10);
+  ctx.restore();
 
-  varr(MX,y,y+ARWS); y+=ARWS;
+  // ── MLP section (TOP of block, y=428-624) ──
+  const MLPY=428, MLPH=196;
+  rr(BLKBOTX,MLPY,BLKBW,MLPH,K.purple+'08',K.purple+'44',8);
+  t('MLP',BLKBOTX+BLKBW/2,MLPY+13,K.purple,11,true);
+  let my=MLPY+28;
+  pill(BLKBOTX+BLKBW/2,my,116,26,K.teal+'0e',K.teal+'55','RMSNorm',K.teal); my+=26+8;
+  rr(BLKBOTX+BLKBW/2-64,my,128,28,K.purple+'18',K.purple+'88',6);
+  t('fc1  →  4 × n_embd',BLKBOTX+BLKBW/2,my+14,K.purple,10); my+=28+7;
+  rr(BLKBOTX+BLKBW/2-38,my,76,26,K.amber+'14',K.amber+'66',6);
+  t('ReLU²',BLKBOTX+BLKBW/2,my+13,K.amber,10); my+=26+7;
+  rr(BLKBOTX+BLKBW/2-64,my,128,28,K.purple+'18',K.purple+'88',6);
+  t('fc2  →  n_embd',BLKBOTX+BLKBW/2,my+14,K.purple,10); my+=28+7;
+  t('⊕  residual add',BLKBOTX+BLKBW/2,my+9,K.muted,10);
 
-  // ══════════ LOOP ══════════
-  const loopTopY=y;
-  const LOOPX=LX-18;   // bracket x
+  // dashed section divider
+  ctx.strokeStyle=K.border; ctx.lineWidth=1; ctx.setLineDash([5,4]);
+  ctx.beginPath();
+  ctx.moveTo(BLKBOTX+18,MLPY+MLPH+8);
+  ctx.lineTo(BLKBOTX+BLKBW-18,MLPY+MLPH+8);
+  ctx.stroke(); ctx.setLineDash([]);
 
-  // resid formula strip
-  rr(LX,y,BW,26,K.bg2,K.border,5);
-  t('resid_λ[i] · x  +  x0_λ[i] · x0',MX,y+13,K.muted,11);
-  t('per-layer learnable scales',RX,y+13,K.dim,10,'','left');
-  y+=26+6;
+  // ── Attention section (BOTTOM of block, y=638-974) ──
+  const ATTNY=638, ATTNBW=BLKBW, ATTNX=BLKBOTX, ATTNH=336;
+  rr(ATTNX,ATTNY,ATTNBW,ATTNH,K.green+'07',K.green+'44',8);
+  t('CausalSelfAttention',ATTNX+ATTNBW/2,ATTNY+13,K.green,11,true);
+  let ay=ATTNY+30;
 
-  // ── BLOCK OUTER BOX ──
-  const blkTopY=y;
-  const blkH=488;
-  const blkBX=LX+12, blkBW=BW-24;
+  // RMSNorm
+  pill(ATTNX+ATTNBW/2,ay,116,26,K.teal+'0e',K.teal+'55','RMSNorm',K.teal); ay+=26+10;
 
-  // draw block box shell
-  rr(LX,blkTopY,BW,blkH,K.bg2,K.border+'88',10);
-  t('Transformer Block  ×N',MX,blkTopY+13,K.muted,11,true);
-
-  // ── ATTENTION SECTION ──
-  const attnY=blkTopY+28;
-  const attnH=216;
-  rr(blkBX,attnY,blkBW,attnH,K.green+'07',K.green+'44',8);
-  t('CausalSelfAttention',blkBX+blkBW/2,attnY+11,K.green,11,true);
-
-  let ay=attnY+26;
-  // norm
-  pill(blkBX+blkBW/2,ay,110,22,K.teal+'0d',K.teal+'55','RMSNorm',K.teal);
-  ay+=22+6;
-
-  // Q K V projections
-  const qw=(blkBW-8)/3-4;
-  const qlabels=['q_proj','k_proj','v_proj'];
-  const qshapes=['(B,T,H,D)','(B,T,Hkv,D)','(B,T,Hkv,D)'];
-  const qcols=[K.blue,K.purple,K.amber];
+  // Q / K / V projections
+  const qw=(ATTNBW-10)/3-4;
+  const qdata=[
+    ['q_proj',K.blue,'(B,T,H,D)'],
+    ['k_proj',K.purple,'(B,T,Hkv,D)'],
+    ['v_proj',K.amber,'(B,T,Hkv,D)']
+  ];
   for(let i=0;i<3;i++){
-    const qx=blkBX+i*(qw+4);
-    rr(qx,ay,qw,30,qcols[i]+'18',qcols[i]+'88',6);
-    t(qlabels[i],qx+qw/2,ay+10,qcols[i],10,true);
-    t(qshapes[i],qx+qw/2,ay+22,qcols[i]+'99',9);
+    const qx=ATTNX+i*(qw+5);
+    rr(qx,ay,qw,36,qdata[i][1]+'18',qdata[i][1]+'88',6);
+    t(qdata[i][0],qx+qw/2,ay+13,qdata[i][1],10,true);
+    t(qdata[i][2],qx+qw/2,ay+27,qdata[i][1]+'99',9);
   }
-  ay+=30+6;
+  ay+=36+10;
 
-  // RoPE | norm+scale  and  VE gate
-  rr(blkBX,ay,92,22,K.cyan+'12',K.cyan+'55',5);
-  t('RoPE on Q, K',blkBX+46,ay+11,K.cyan,10);
-  rr(blkBX+96,ay,96,22,K.teal+'0d',K.teal+'44',5);
-  t('norm + ×1.2',blkBX+144,ay+11,K.teal,10);
-  // VE gate box (right of row)
-  rr(blkBX+blkBW-84,ay,80,22,K.pink+'18',K.pink+'66',5);
-  t('⊕ VE gate',blkBX+blkBW-44,ay+11,K.pink,10);
-  ay+=22+8;
+  // RoPE | norm+scale | VE gate  (three side-by-side pills)
+  const rpW=96, nsW=96, veW=ATTNBW-rpW-nsW-16;
+  rr(ATTNX,ay,rpW,28,K.cyan+'12',K.cyan+'55',5);
+  t('RoPE  Q, K',ATTNX+rpW/2,ay+14,K.cyan,10);
+  rr(ATTNX+rpW+8,ay,nsW,28,K.teal+'0e',K.teal+'44',5);
+  t('norm + ×1.2',ATTNX+rpW+8+nsW/2,ay+14,K.teal,10);
+  rr(ATTNX+rpW+nsW+16,ay,veW,28,K.pink+'18',K.pink+'66',5);
+  t('⊕ VE gate',ATTNX+rpW+nsW+16+veW/2,ay+14,K.pink,10);
+  ay+=28+10;
 
   // Flash Attention
-  rr(blkBX+blkBW/2-68,ay,136,26,K.green+'18',K.green,8);
-  t('Flash Attention (causal)',blkBX+blkBW/2,ay+13,K.green,11);
-  ay+=26+6;
+  rr(ATTNX+ATTNBW/2-76,ay,152,30,K.green+'18',K.green,8);
+  t('Flash Attention  (causal)',ATTNX+ATTNBW/2,ay+15,K.green,11); ay+=30+10;
 
-  // o_proj + residual
-  rr(blkBX+blkBW/2-52,ay,104,24,K.blue+'12',K.blue+'88',6);
-  t('o_proj  →  n_embd',blkBX+blkBW/2,ay+12,K.blue,10);
-  ay+=24+4;
-  t('⊕  residual add',blkBX+blkBW/2,ay+8,K.muted,10);
+  // o_proj
+  rr(ATTNX+ATTNBW/2-58,ay,116,28,K.blue+'12',K.blue+'88',6);
+  t('o_proj  →  n_embd',ATTNX+ATTNBW/2,ay+14,K.blue,10); ay+=28+8;
 
-  // ── MLP SECTION ──
-  const mlpY=attnY+attnH+10;
-  const mlpH=180;
-  rr(blkBX,mlpY,blkBW,mlpH,K.purple+'07',K.purple+'44',8);
-  t('MLP',blkBX+blkBW/2,mlpY+11,K.purple,11,true);
+  // residual
+  t('⊕  residual add',ATTNX+ATTNBW/2,ay+9,K.muted,10);
 
-  let my=mlpY+26;
-  pill(blkBX+blkBW/2,my,110,22,K.teal+'0d',K.teal+'55','RMSNorm',K.teal);
-  my+=22+6;
-  rr(blkBX+blkBW/2-62,my,124,24,K.purple+'18',K.purple+'88',6);
-  t('fc1  →  4 × n_embd',blkBX+blkBW/2,my+12,K.purple,10);
-  my+=24+5;
-  rr(blkBX+blkBW/2-36,my,72,22,K.amber+'12',K.amber+'66',6);
-  t('ReLU²',blkBX+blkBW/2,my+11,K.amber,10);
-  my+=22+5;
-  rr(blkBX+blkBW/2-62,my,124,24,K.purple+'18',K.purple+'88',6);
-  t('fc2  →  n_embd',blkBX+blkBW/2,my+12,K.purple,10);
-  my+=24+5;
-  t('⊕  residual add',blkBX+blkBW/2,my+8,K.muted,10);
+  // VE note inside block (bottom right corner)
+  t('VE on alternating layers (has_ve)',ATTNX+ATTNBW-2,BLKY+BLKH-34,K.dim,9,false,'right');
 
-  // VE note inside block (bottom right)
-  const veNoteY=blkTopY+blkH-22;
-  t('VE injected on alternating layers  (has_ve)',blkBX+blkBW-4,veNoteY,K.dim,9,'','right');
+  // ── small arrow from block top to backout ──
+  uarr(MX, BLKY+G, BLKY);
 
-  // ── LOOP BRACKET (left) ──
-  const loopBotY=blkTopY+blkH+6;
-  ctx.strokeStyle=K.border; ctx.lineWidth=1.5;
-  ctx.beginPath();
-  ctx.moveTo(LOOPX+8,loopTopY); ctx.lineTo(LOOPX,loopTopY);
-  ctx.lineTo(LOOPX,loopBotY);   ctx.lineTo(LOOPX+8,loopBotY);
-  ctx.stroke();
-  t('× n_layer',LOOPX-4,(loopTopY+loopBotY)/2,K.muted,10,'','right');
+  // ── x_backout annotation (dashed branch from block right edge at mid-attn) ──
+  const bkY=ATTNY+ATTNH/2;
+  dashLine(LX+BW,bkY,RX+2,bkY,K.red+'88');
+  rr(RX+2,bkY-14,152,30,K.red+'14',K.red+'88',5);
+  t('x_backout = x',RX+78,bkY-4,K.red,10,true);
+  t('(saved at layer N // 2)',RX+78,bkY+9,K.dim,9);
 
-  // ── BACKOUT BRANCH (right side, mid block) ──
-  const backY=blkTopY+blkH/2;
-  ctx.strokeStyle=K.red+'88'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
-  ctx.beginPath();
-  ctx.moveTo(LX+BW,backY); ctx.lineTo(RX+4,backY); ctx.stroke();
-  ctx.setLineDash([]);
-  rr(RX+4,backY-12,140,26,K.red+'14',K.red+'88',5);
-  t('x_backout = x',RX+74,backY-3,K.red,10,true);
-  t('captured at layer N // 2',RX+74,backY+9,K.dim,9);
-
-  y=blkTopY+blkH;
-  varr(MX,y,y+ARWS); y+=ARWS;
-
-  // ── BACKOUT SUBTRACT ──
-  rr(LX,y,BW,36,K.red+'18',K.red);
-  t('x  −  backout_λ · x_backout',MX,y+12,K.red,12,true);
-  t('remove low-level residual features',MX,y+26,K.red+'aa',10);
-  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
-
-  // ── FINAL NORM ──
-  pill(MX,y,130,26,K.teal+'12',K.teal+'88','Final RMSNorm',K.teal);
-  y+=26; varr(MX,y,y+ARWS); y+=ARWS;
-
-  // ── LM HEAD ──
-  rr(LX,y,BW,36,K.amber+'12',K.amber);
-  t('lm_head  →  (B, T, vocab_size)',MX,y+18,K.amber,12,true);
-  t('Linear(n_embd, vocab)',RX,y+18,K.muted,10,'','left');
-  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
-
-  // ── SOFTCAP ──
-  rr(LX,y,BW,36,K.orange+'18',K.orange);
-  t('Softcap:  15 · tanh(logits / 15)',MX,y+12,K.orange,12,true);
-  t('clamp logits to (−15, +15) smoothly',MX,y+26,K.orange+'aa',10);
-  y+=36; varr(MX,y,y+ARWS); y+=ARWS;
-
-  // ── LOSS ──
-  rr(LX,y,BW,36,K.green+'18',K.green);
-  t('Cross-Entropy Loss',MX,y+18,K.green,13,true);
-  t('(B, T) token predictions vs targets',RX,y+18,K.muted,10,'','left');
-
-  // ── RIGHT SIDE: shape legend column ──
-  const ry=blkTopY+52;
-  t('Shapes inside block:',RX,ry,K.dim,10,'','left');
-  const shapes=[
-    ['Q',K.blue,'(B, T, n_head, head_dim)'],
-    ['K,V',K.purple,'(B, T, n_kv_head, head_dim)'],
-    ['head_dim','#e6edf3','n_embd // n_head'],
-    ['y',K.green,'(B, T, n_head, head_dim)'],
-    ['→ reshape',K.muted,'(B, T, n_embd)'],
+  // ── shapes legend on right (at attention level) ──
+  const SLY=ATTNY+30;
+  ann('Tensor shapes:',RX,SLY,K.dim);
+  const sleg=[
+    ['Q ',K.blue,'(B, T,  H,   head_dim)'],
+    ['K,V',K.purple,'(B, T, Hkv, head_dim)'],
+    ['head_dim',K.text,'= n_embd // n_head'],
+    ['out y',K.green,'(B, T,  H,   head_dim)'],
   ];
-  shapes.forEach(([lbl,col,val],i)=>{
-    const sy=ry+18+i*18;
-    t(lbl+' :',RX+28,sy,col,9,'','right');
-    t(val,RX+32,sy,K.muted,9,'','left');
+  sleg.forEach(([lbl,col,val],i)=>{
+    ann(lbl+':',RX+34,SLY+18+i*18,col,'right');
+    ann(val,RX+38,SLY+18+i*18);
   });
+
+  // ═══════════════════════════════════════
+  // RESID FORMULA STRIP  y=1000
+  // ═══════════════════════════════════════
+  rr(LX,1000,BW,30,K.bg2,K.border,5);
+  t('resid_λ[i] · x  +  x0_λ[i] · x0',MX,1015,K.muted,11);
+  uarr(MX,1000,990); // tiny connecting arrow up into block bottom
+  uarr(MX,1044,1030); // arrow from smear up to resid formula
+
+  // ═══════════════════════════════════════
+  // SMEAR GATE  y=1052
+  // ═══════════════════════════════════════
+  const SGY=1052;
+  rr(LX,SGY,BW,BH+8,K.orange+'18',K.orange);
+  t('Smear Gate',MX,SGY+17,K.orange,12,true);
+  t('x[:,1:] + gate · x[:,:-1]  (training)',MX,SGY+33,K.orange+'bb',10);
+  // x0 branch
+  dashLine(LX+BW*0.68,SGY+4,LX+BW*0.68,SGY-18,K.dim);
+  dashLine(LX+BW*0.68,SGY-18,RX+4,SGY-18,K.dim);
+  rr(RX+4,SGY-28,124,22,K.bg3,K.dim,5);
+  t('x0 = x  (all layers)',RX+66,SGY-17,K.dim,10);
+  uarr(MX,SGY+BH+8+G, SGY+BH+8);
+
+  // ═══════════════════════════════════════
+  // RMSN  y=1128
+  // ═══════════════════════════════════════
+  pill(MX,1128,152,30,K.teal+'12',K.teal+'88','RMSNorm  (x)',K.teal);
+  uarr(MX,1128+30+G, 1128+30);
+
+  // ═══════════════════════════════════════
+  // WTE  y=1192
+  // ═══════════════════════════════════════
+  const WY=1192;
+  rr(LX,WY,BW,BH,K.blue+'10',K.blue+'88');
+  t('wte  →  x : (B, T, n_embd)',MX,WY+BH/2,K.blue,12);
+  ann('nn.Embedding(vocab, n_embd)',RX,WY+BH/2);
+  uarr(MX,WY+BH+G, WY+BH);
+
+  // ═══════════════════════════════════════
+  // INPUT  y=1280  (bottom)
+  // ═══════════════════════════════════════
+  const IY=1280;
+  rr(LX,IY,BW,BH,K.blue+'1e',K.blue);
+  t('Input   idx : (B, T)',MX,IY+BH/2,K.blue,13,true);
+  // bottom label
+  t('tokens enter here',MX,IY+BH+14,K.dim,10);
+
+  // ═══════════════════════════════════════
+  // RoPE buffers annotation (left side)
+  // ═══════════════════════════════════════
+  const cosY=ATTNY+3*(26+10)+28+40+30+28+28;  // approx y of rope row center
+  // just use a fixed position near the left of the block
+  dashLine(LX,ATTNY+ATTNH/2-38,LX-50,ATTNY+ATTNH/2-38,K.dim+'88');
+  ann('cos/sin: precomputed',LX-50-156,ATTNY+ATTNH/2-50,K.dim,'left');
+  ann('buffers at init, sliced',LX-50-156,ATTNY+ATTNH/2-37,K.dim,'left');
+  ann('to [T0:T0+T] per forward',LX-50-156,ATTNY+ATTNH/2-24,K.dim,'left');
+
+  // ═══════════════════════════════════════
+  // "LOOP END" note (top of bracket, just above block)
+  // ═══════════════════════════════════════
+  t('output x',MX,BLKY-8,K.dim,9);
+  t('input x',MX,BLKY+BLKH+10,K.dim,9);
 }
 drawFullArch();
 

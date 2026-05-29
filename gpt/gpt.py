@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from functools import partial
 
 import torch
+from torch import torch_version
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules import transformer
@@ -662,7 +663,28 @@ class GPT(nn.Module):
         else:
             return logits  # Inference
 
-
     @torch.inference_mode
-    def generate(self, tokens, max_tokens, temperature,=1.0, top_ke=None, seed=42):
+    def generate(self, tokens, max_tokens, temperature=1.0, top_k=None, seed=42):
+        assert isinstance(tokens, list)
+        device = self.transformer.wte.weight.device
+        rng = None
+        if temperature > 0:
+            rng = torch.Generator(device=device)
+            rng.manual_seed(seed)
+        ids = torch.tensor([tokens], dtype=torch.long, device=device)
+        for _ in range(max_tokens):
+            logits = self.forward(ids)
+            logits = logits[:, -1, :]
+            if top_k is not None and top_k > 0:
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                logits[logits < v[:, [-1]]] = -float("Inf")
+            if temperature > 0:
+                logits = logits / temperature
+                probs = F.softmax(logits, dim=-1)
+                next_id = torch.multinomial(probs, num_samples=1, generator=rng)
+            else:
+                next_id = torch.argmax(logits, dim=-1, keepdim=True)
 
+            ids = torch.cat((ids, next_id), dim=1)
+            token = next_id.item()
+            yield token
