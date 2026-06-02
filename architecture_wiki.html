@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nanochat Architecture Wiki</title>
+<title>Nanochat Architecture Wiki</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Linux+Libertine+O&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&display=swap" rel="stylesheet">
@@ -509,13 +509,13 @@ hr.lead-rule{
 <!-- ═══════════════ PAGE 0 : OVERVIEW ═══════════════ -->
 <div class="page active" data-page="0">
 <div id="hero">
-  <h1>nanochat Architecture</h1>
-  <p class="hero-sub">From <em>nanochat</em> — a GPT pretraining stack targeting Hopper-class GPUs (SM 9.x)</p>
+  <h1>Nanochat Architecture</h1>
+  <p class="hero-sub">From <em>Nanochat</em> — a GPT pretraining stack targeting Hopper-class GPUs (SM 9.x)</p>
 </div>
 
 <div class="article-lead">
   <table class="infobox">
-    <tr><th colspan="2" class="infobox-title">nanochat at a glance</th></tr>
+    <tr><th colspan="2" class="infobox-title">Nanochat at a glance</th></tr>
     <tr><td class="ib-label">Target GPU</td><td>Hopper (SM 9.x)</td></tr>
     <tr><td class="ib-label">Compute dtype</td><td>bfloat16</td></tr>
     <tr><td class="ib-label">Attention</td><td>Flash Attention 3 / GQA</td></tr>
@@ -526,13 +526,14 @@ hr.lead-rule{
     <tr><td class="ib-label">Inspired by</td><td>karpathy/nanochat</td></tr>
   </table>
 
-  <p><b>nanochat</b> is a from-scratch GPT pretraining stack built for efficiency on Hopper-class GPUs. It incorporates a number of architectural refinements over a baseline transformer: <a href="#" data-goto="1" data-anchor="rope">Rotary Position Embeddings (RoPE)</a>, <a href="#" data-goto="2" data-anchor="ve">Value Embeddings</a>, a <a href="#" data-goto="2" data-anchor="smear">Smear Gate</a>, <a href="#" data-goto="2" data-anchor="backout">Backout Lambda</a>, and a combined <a href="#" data-goto="3" data-anchor="init">weight initialization</a> strategy designed for bfloat16 stability.</p>
+  <p><b>Nanochat</b> is a from-scratch GPT pretraining stack built for efficiency on Hopper-class GPUs. It incorporates a number of architectural refinements over a baseline transformer: <a href="#" data-goto="1" data-anchor="rope">Rotary Position Embeddings (RoPE)</a>, <a href="#" data-goto="2" data-anchor="ve">Value Embeddings</a>, a <a href="#" data-goto="2" data-anchor="smear">Smear Gate</a>, <a href="#" data-goto="2" data-anchor="backout">Backout Lambda</a>, and a combined <a href="#" data-goto="3" data-anchor="init">weight initialization</a> strategy designed for bfloat16 stability.</p>
 
   <p>This article documents the design decisions encountered during construction, with interactive visualizations for the less intuitive components. Each section answers a specific question that arose while building the model from scratch.</p>
 </div>
 <hr class="lead-rule">
 
 <!-- Page nav cards -->
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.5rem;">Browse topics</p>
 <div class="page-cards">
   <div class="pcard" data-goto="1">
     <span class="pcard-num">I</span>
@@ -2150,22 +2151,54 @@ function drawFullArch(){
 drawFullArch();
 
 // ─────────────────────────────────────────────
-// SIDEBAR ACTIVE TRACKING
+// TAB / PAGE SWITCHING
 // ─────────────────────────────────────────────
-const secs=document.querySelectorAll('.section');
-const navAs=document.querySelectorAll('#sidebar a');
-new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting) navAs.forEach(a=>
-      a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));
-  });
-},{threshold:0.25}).observe && secs.forEach(s=>
-  new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting) navAs.forEach(a=>
-        a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));
+const tabs      = document.querySelectorAll('#page-tabs .tab');
+const pages     = document.querySelectorAll('.page');
+const tocGroups = document.querySelectorAll('.toc-group');
+const tocLabel  = $('toc-page-label');
+const PAGE_LABELS = ['Overview','Position & Attention','Embeddings & Gates','Stability & Init','Compute & Architecture'];
+
+function switchPage(n, anchor) {
+  tabs.forEach(t      => t.classList.toggle('active',      +t.dataset.page  === n));
+  pages.forEach(p     => p.classList.toggle('active',      +p.dataset.page  === n));
+  tocGroups.forEach(g => g.classList.toggle('active',      +g.dataset.group === n));
+  if (tocLabel) tocLabel.textContent = PAGE_LABELS[n] || '';
+  if (!anchor) { window.scrollTo({top:0, behavior:'instant'}); }
+  if (anchor) {
+    // wait a tick so the page becomes visible before scrollIntoView
+    requestAnimationFrame(() => {
+      const el = document.getElementById(anchor);
+      if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
     });
-  },{threshold:0.25}).observe(s));
+  }
+}
+
+// tab bar clicks
+tabs.forEach(tab => tab.addEventListener('click', () => switchPage(+tab.dataset.page)));
+
+// page-cards and [data-goto] links
+document.querySelectorAll('[data-goto]').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    switchPage(+el.dataset.goto, el.dataset.anchor || null);
+  });
+});
+
+// ─────────────────────────────────────────────
+// WITHIN-PAGE SIDEBAR ACTIVE TRACKING
+// ─────────────────────────────────────────────
+const tocItems = document.querySelectorAll('.toc-item[href^="#"]');
+document.querySelectorAll('.section').forEach(sec => {
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocItems.forEach(a =>
+          a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+      }
+    });
+  }, {threshold: 0.3, rootMargin: '-60px 0px -40% 0px'}).observe(sec);
+});
 </script>
 </body>
 </html>
