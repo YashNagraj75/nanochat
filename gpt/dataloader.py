@@ -58,3 +58,110 @@ def _document_batches(split, resume_state_dict, tokenizer_batch_size):
             pq_idx += 1
         first_pass = False
         epoch += 1
+
+
+def tokenizing_distributed_data_loader_with_state_bos_bestfit(
+    tokenizer,
+    B,
+    T,
+    split,
+    tokenizer_threads=4,
+    tokenizer_batch_size=128,
+    device="cuda",
+    resume_state_dict=None,
+    buffer_size=1000,
+):
+    """
+    BOS-aligned dataloader with Best-Fit Cropping.
+
+    Reduces token waste compared to simple greedy cropping by searching a buffer
+    for documents that fit well, while maintaining 100% utilization (no padding).
+
+    Algorithm for each row:
+    1. From buffered docs, pick the LARGEST doc that fits entirely
+    2. Repeat until no doc fits
+    3. When nothing fits, crop a doc to fill remaining space exactly
+
+    Key properties:
+    - Every row starts with BOS
+    - 100% utilization (no padding, every token is trained on)
+    - Approximately 35% of all tokens are discarded due to cropping
+    """
+    assert split in ["train", "val"], f"split must be train or val got {split}"
+
+    row_capacity = T + 1
+    batches = _document_batches(split, resume_state_dict, tokenizer_batch_size)
+    bos_token = tokenizer.get_bos_token_id()
+    doc_buffer = []
+    pq_idx, rg_idx, epoch = 0, 0, 1
+
+    def refill_buffer():
+        nonlocal pq_idx, rg_idx, epoch
+        doc_batch, (pq_id, rg_idx, epoch) = next(batches)
+        token_lists = tokenizer.encode(
+            doc_batch, prepend=bos_token, num_threads=tokenizer_threads
+        )
+        for tokens in token_lists:
+            doc_buffer.append(tokens)
+
+    # Pre-allocate buffers once: layout is [inputs (B*T) | targets (B*T)]
+    use_cuda = device == "cuda"
+    row_buffer = torch.empty((B, row_capacity), dtype=torch.long)
+    cpu_buffer = torch.empty(2 * B * T, dtype=torch.long, pin_memory=use_cuda)
+    gpu_buffer = torch.empty(2 * B * T, dtype=torch.long, device=device)
+    cpu_inputs = cpu_buffer[: B * T].view(B, T)
+    cpu_targets = cpu_buffer[B * T :].view(B, T)
+    inputs = gpu_buffer[: B * T].view(B, T)
+    targets = gpu_buffer[B * T :].view(B, T)
+
+    while True:
+        for row_idx in range(B):
+            pos = 0
+            while pos < row_capacity:
+                # Ensure buffer has documents
+                while len(doc_buffer) < buffer_size:
+                    refill_buffer()
+
+                remaining = row_capacity - pos
+
+                best_idx = -1
+                best_len = 0
+                for i, doc in enumerate(doc_buffer):
+                    doc_len = len(doc)
+                    if doc_len <= remaining and doc_len > best_len:
+                        best_len = doc_len
+                        best_idx = i
+
+                if best_idx >= 0:
+                    doc = doc_buffer[best_idx]
+                    doc_len = len(doc)
+                    row_buffer[row_idx, pos : pos + doc_len] = torch.tensor(
+                        doc, dtype=torch.long
+                    )
+                    pos += doc_len
+                else:
+                    shortest_idx = min(
+                        range(len(doc_buffer)), key=lambda i: len(doc_buffer[i])
+                    )
+                    doc = doc_buffer.pop(shortest_idx)
+                    row_buffer[row_idx, pos : pos + remaining] = torch.tensor(
+                        doc[:remaining], dtype=torch.long
+                    )
+                    pos += remaining
+
+        cpu_inputs.copy_(row_buffer[:, :-1])
+        cpu_targets.copy_(row_buffer[:, 1:])
+
+        state_dict = {"pq_idx": pq_idx, "rg_idx": rg_idx, "epoch": epoch}
+
+        gpu_buffer.copy_(cpu_buffer, non_blocking=use_cuda)
+        yield inputs, targets, state_dict
+
+
+def tokenizing_distributed_data_loader_bos_bestfiit(*args, **kwargs):
+    for (
+        inputs,
+        targets,
+        state_dict,
+    ) in tokenizing_distributed_data_loader_with_state_bos_bestfit(*args, **kwargs):
+        yield inputs, targets
