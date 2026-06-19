@@ -614,7 +614,7 @@ class GPT(nn.Module):
             elif x_pre_smear is not None:
                 # Decode phase: single token, use cached prev embedding
                 gate = self.smear_lambda.to(x.dtype) * torch.sigmoid(
-                    self.smear_gate(x[:, 1:, :24])
+                    self.smear_gate(x[:, :, :24])
                 )
                 x = x + gate * x_pre_smear
 
