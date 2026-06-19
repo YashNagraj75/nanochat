@@ -500,6 +500,7 @@ hr.lead-rule{
       <a href="#smearcat" class="toc-item"><span class="num">11</span>Smear Gate Cat</a>
       <a href="#softcap" class="toc-item"><span class="num">12</span>Logit Softcapping</a>
       <a href="#fullarch" class="toc-item"><span class="num">13</span>Full Architecture</a>
+      <a href="#rowstate" class="toc-item"><span class="num">14</span>RowState — Batch Generation</a>
     </div>
   </nav>
 </aside>
@@ -1041,6 +1042,31 @@ logits = softcap * torch.tanh(logits / softcap)</code></pre>
   <div class="section-header"><span class="snum">13</span><h2>Full Model Architecture — GPT Forward Pass</h2><span class="edit-link">[§]</span></div>
   <p>End-to-end diagram of one forward pass through the GPT model, from token ids to logits. The transformer block is shown with all internal components: GQA attention, RoPE, value embedding injection, ReLU² MLP, residual scaling, and the pre/post-loop special ops (smear, backout, softcap).</p>
   <canvas id="cFullArch" width="820" height="1400" style="display:block;margin:1.5rem auto;border-radius:10px"></canvas>
+</section>
+
+<!-- ══════════════════════════════════════════ §14 ROWSTATE ══ -->
+<section class="section" id="rowstate">
+  <div class="section-header"><span class="snum">14</span><h2>RowState — Per-Row State in Batched Generation</h2><span class="edit-link">[§]</span></div>
+  <p>
+    During batched generation the model processes <strong>B sequences in parallel</strong> — one per row of the <code>(B, T)</code> token matrix.
+    Each row is independent: it may be mid-sentence, done, or blocked inside a <code>&lt;python&gt;</code> block while the others continue.
+    <code>RowState</code> tracks all of this per-row so the decode loop can manage each sequence individually.
+  </p>
+  <canvas id="cRowState" width="820" height="340" style="display:block;margin:1.5rem auto;border-radius:10px"></canvas>
+  <table style="width:100%;border-collapse:collapse;margin-top:1rem;font-size:.85rem">
+    <thead><tr style="border-bottom:1px solid #30363d">
+      <th style="text-align:left;padding:.4rem .6rem;color:#7d8590">Field</th>
+      <th style="text-align:left;padding:.4rem .6rem;color:#7d8590">Type</th>
+      <th style="text-align:left;padding:.4rem .6rem;color:#7d8590">Meaning</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #21262d"><td style="padding:.4rem .6rem"><code>current_tokens</code></td><td style="padding:.4rem .6rem;color:#7d8590">list[int]</td><td style="padding:.4rem .6rem">Full token sequence so far — prompt + all generated tokens</td></tr>
+      <tr style="border-bottom:1px solid #21262d"><td style="padding:.4rem .6rem"><code>forced_tokens</code></td><td style="padding:.4rem .6rem;color:#7d8590">deque[int]</td><td style="padding:.4rem .6rem">FIFO queue of tokens to inject without sampling (eval results, template tokens)</td></tr>
+      <tr style="border-bottom:1px solid #21262d"><td style="padding:.4rem .6rem"><code>in_python_block</code></td><td style="padding:.4rem .6rem;color:#7d8590">bool</td><td style="padding:.4rem .6rem">True while inside a <code>&lt;python&gt;…&lt;/python&gt;</code> block — tokens buffered, not emitted</td></tr>
+      <tr style="border-bottom:1px solid #21262d"><td style="padding:.4rem .6rem"><code>python_expr_tokens</code></td><td style="padding:.4rem .6rem;color:#7d8590">list[int]</td><td style="padding:.4rem .6rem">Tokens collected inside the block; decoded and eval()'d on closing tag</td></tr>
+      <tr><td style="padding:.4rem .6rem"><code>completed</code></td><td style="padding:.4rem .6rem;color:#7d8590">bool</td><td style="padding:.4rem .6rem">True once EOS or max_tokens reached — decode loop skips this row</td></tr>
+    </tbody>
+  </table>
 </section>
 
 </div><!-- /page 4 -->
@@ -2149,6 +2175,7 @@ function drawFullArch(){
   t('input x',MX,BLKY+BLKH+10,K.dim,9);
 }
 drawFullArch();
+drawRowState();
 
 // ─────────────────────────────────────────────
 // TAB / PAGE SWITCHING
@@ -2184,6 +2211,103 @@ document.querySelectorAll('[data-goto]').forEach(el => {
     switchPage(+el.dataset.goto, el.dataset.anchor || null);
   });
 });
+
+// ─────────────────────────────────────────────
+// §14  ROWSTATE DIAGRAM
+// ─────────────────────────────────────────────
+function drawRowState() {
+  const ctx = C('cRowState');
+  const W = 820, H = 340;
+  ctx.fillStyle = PAL.bg2;
+  ctx.roundRect(0,0,W,H,10); ctx.fill();
+
+  const P = PAL;
+  const font = (sz, w='normal') => `${w} ${sz}px 'JetBrains Mono', monospace`;
+
+  // ── Shared vertical centers — both matrix rows and RowState boxes use these ──
+  const BH = 72, BG = 14;
+  const totalH = 3*BH + 2*BG;            // 244px
+  const startY = (H - totalH) / 2;       // vertically centre the whole stack
+  const centers = [0,1,2].map(i => startY + i*(BH+BG) + BH/2);  // [84, 170, 256]
+
+  const rowColors  = ['#388bfd22','#3fb95022','#bc8cff22'];
+  const rowBorders = [P.accent, P.green, P.purple];
+
+  // ── (B,T) matrix on the left ──
+  const MX = 36, CW = 44, CH = 26, COLS = 5;
+  const matrixRight = MX + COLS * CW;    // 256
+
+  // column headers above row 0
+  ctx.fillStyle = P.muted; ctx.font = font(10.5);
+  ctx.textAlign = 'center';
+  for(let c=0;c<COLS;c++) ctx.fillText('T='+c, MX+c*CW+CW/2, centers[0]-CH/2-8);
+
+  // matrix title
+  ctx.fillStyle = P.muted; ctx.font = font(11);
+  ctx.textAlign = 'left';
+  ctx.fillText('idx  (B=3, T=5)', MX, centers[0]-CH/2-22);
+
+  // draw each matrix row centred on centers[r]
+  for(let r=0;r<3;r++){
+    const rowY = centers[r] - CH/2;
+    for(let c=0;c<COLS;c++){
+      const x = MX + c*CW;
+      ctx.fillStyle = rowColors[r];
+      ctx.fillRect(x, rowY, CW-2, CH-2);
+      ctx.strokeStyle = rowBorders[r]; ctx.lineWidth = 1;
+      ctx.strokeRect(x, rowY, CW-2, CH-2);
+      ctx.fillStyle = P.text; ctx.font = font(10);
+      ctx.textAlign = 'center';
+      ctx.fillText('tok', x+CW/2-1, rowY+CH/2+4);
+    }
+  }
+
+  // ── RowState boxes on the right ──
+  const BX = 314, BW = 476;
+  const stateFields = [
+    { border:'#388bfd', fields:['current_tokens: [423, 891, 12 …]', 'forced_tokens: []', 'completed: False'] },
+    { border:'#3fb950', fields:['current_tokens: [701, 34 …]', 'in_python_block: True', 'python_expr_tokens: [2,+,2]'] },
+    { border:'#bc8cff', fields:['current_tokens: [55, 221 …]', 'forced_tokens: [tok_4]', 'completed: False'] },
+  ];
+
+  // box title above first box
+  ctx.fillStyle = P.muted; ctx.font = font(11);
+  ctx.textAlign = 'left';
+  ctx.fillText('row_states  (one per batch row)', BX, centers[0]-BH/2-8);
+
+  stateFields.forEach((rs, i) => {
+    const boxY = centers[i] - BH/2;
+    ctx.fillStyle = rs.border+'18';
+    ctx.beginPath(); ctx.roundRect(BX, boxY, BW, BH, 6); ctx.fill();
+    ctx.strokeStyle = rs.border; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(BX, boxY, BW, BH, 6); ctx.stroke();
+
+    ctx.fillStyle = rs.border; ctx.font = font(11,'bold');
+    ctx.textAlign = 'left';
+    ctx.fillText('RowState['+i+']', BX+10, boxY+16);
+
+    ctx.fillStyle = P.text; ctx.font = font(10.5);
+    rs.fields.forEach((f,j) => ctx.fillText(f, BX+14, boxY+31+j*15));
+
+    // perfectly horizontal arrow — both ends share centers[i]
+    const ax1 = matrixRight + 10, ax2 = BX - 8, ay = centers[i];
+    ctx.strokeStyle = rs.border; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(ax1, ay); ctx.lineTo(ax2, ay); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = rs.border;
+    ctx.beginPath();
+    ctx.moveTo(ax2, ay);
+    ctx.lineTo(ax2-7, ay-4);
+    ctx.lineTo(ax2-7, ay+4);
+    ctx.closePath(); ctx.fill();
+  });
+
+  // caption
+  ctx.fillStyle = P.muted; ctx.font = font(10.5);
+  ctx.textAlign = 'center';
+  ctx.fillText('Each row is an independent sequence. RowState[b] mirrors idx[b, :]', W/2, H-10);
+}
 
 // ─────────────────────────────────────────────
 // WITHIN-PAGE SIDEBAR ACTIVE TRACKING

@@ -175,7 +175,22 @@ def sample_next_token(logits, rng, temp=1.0, top_k=None):
 
 
 class RowState:
-    "Per row state tracking during batch generation"
+    """Per-row state for one sequence in a generation batch (B, T) matrix.
+
+    Each batch row is an independent sequence being generated in parallel.
+    This object tracks everything that differs between rows so the decode
+    loop can handle each one independently:
+
+      current_tokens    – full token sequence so far (prompt + generated)
+      forced_tokens     – FIFO queue of tokens to inject without sampling;
+                          used to feed back python eval results or template tokens
+      in_python_block   – True while collecting tokens inside a <python>…</python>
+                          block; tokens are buffered rather than emitted
+      python_expr_tokens– tokens accumulated inside the current python block,
+                          decoded and eval()'d when the closing tag is detected
+      completed         – True once this row has hit EOS or max_tokens;
+                          the decode loop skips it while other rows continue
+    """
 
     def __init__(self, current_tokens=None) -> None:
         self.current_tokens = current_tokens or []
@@ -183,3 +198,31 @@ class RowState:
         self.in_python_block = False
         self.python_expr_tokens = []
         self.completed = False
+
+
+class Engine:
+    def __init__(self, model, tokenizer) -> None:
+        self.model = model
+        self.tokenizer = tokenizer
+
+    def generate(
+        self,
+        tokens,
+        max_tokens=None,
+        num_samples=1,
+        temperature=1.0,
+        top_k=None,
+        seed=42,
+    ):
+        """
+        Same as generate but then does a single prefill and then clones the KV cache
+        """
+        assert isinstance(tokens, list) and isinstance(tokens[0], int), (
+            "expecting a list of ints for tokens"
+        )
+        device = self.model.get_device()
+        dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
+        rng = torch.Generator(device=device)
+        rng.manual_seed(seed)
+
+        get_special = lambda s: self.tokenizer.encode_special(s)
